@@ -11,6 +11,7 @@ ThangTypeConstants = require 'lib/ThangTypeConstants'
 ThangNamesCollection = require 'collections/ThangNamesCollection'
 LZString = require 'lz-string'
 scriptverseLevelRegistry = require 'lib/scriptverse/levelRegistry'
+scriptverseSessionFactory = require 'lib/scriptverse/sessionFactory'
 
 CocoClass = require 'core/CocoClass'
 AudioPlayer = require 'lib/AudioPlayer'
@@ -181,6 +182,8 @@ module.exports = class LevelLoader extends CocoClass
         originalGet.apply @, arguments
     if @sessionless
       null
+    else if scriptverseLevelRegistry.hasLevel @levelID
+      @loadScriptVerseSession()
     else if @fakeSessionConfig?
       @loadFakeSession()
     else
@@ -188,6 +191,11 @@ module.exports = class LevelLoader extends CocoClass
     @populateLevel()
 
   # Session Loading
+
+  loadScriptVerseSession: ->
+    @session = scriptverseSessionFactory.createLocalSession @level, me.id
+    @supermodel.trackModel @session
+    @loadDependenciesForSession @session
 
   loadFakeSession: ->
     initVals =
