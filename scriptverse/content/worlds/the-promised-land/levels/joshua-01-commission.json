@@ -33,11 +33,12 @@
   "map": {
     "theme": "israelite-camp-east-of-jordan",
     "playerStart": { "x": 18, "y": 18 },
-    "goal": { "id": "Israelite Officers Goal", "x": 42, "y": 30 },
+    "goal": { "id": "Israelite Officers Goal", "x": 30, "y": 6 },
     "designNotes": [
       "Keep the camp open and readable rather than corridor-like.",
       "Place tents mainly around the edges and use only a few natural obstacles.",
-      "Preserve visual continuity toward the Jordan for later levels."
+      "Preserve visual continuity toward the Jordan for later levels.",
+      "Level 1 uses one eastward move followed by one southward move so the first victory demonstrates execution order and a two-command sequence."
     ]
   },
   "engine": {
@@ -45,6 +46,6 @@
     "levelType": "hero",
     "heroId": "Hero Placeholder",
     "requiredCapabilities": ["programmable", "physical", "moves", "goal-touch"],
-    "integrationNotes": "This file is original ScriptVerse content. The adapter that converts it into the inherited Level/Thang/System representation is the next implementation step."
+    "integrationNotes": "This file is original ScriptVerse content. Generic inherited engine primitives are adapted at runtime; narrative, mission, map intent, and curriculum remain ScriptVerse-owned."
   }
 }
