@@ -5,11 +5,22 @@
  * ScriptVerse portion of the Level shape consumed by the inherited engine.
  *
  * This deliberately does not copy upstream CodeCombat level definitions.
- * Engine dependencies (ThangTypes, LevelComponents and LevelSystems) are
- * resolved separately by the existing loader/integration layer.
+ * During the engine-integration milestone we reuse a small number of generic
+ * engine/common ThangTypes only as development stand-ins. ScriptVerse-owned
+ * art can replace them without changing the manifest format.
  */
 
 const SUPPORTED_FORMAT = 'scriptverse-level-v1'
+
+// Existing engine identities. These are reusable infrastructure references,
+// not copied level content.
+const ENGINE = {
+  physicalComponent: '524b75ad7fc0f6d519000001',
+  programmableComponent: '524b7b5a7fc0f6d51900000e',
+  movesComponent: '524b7b8c7fc0f6d519000013',
+  knightHeroThangType: '529ffbf1cf1818f2be000001',
+  placeholderFlagThangType: '53fa25f25bc220000052c2be'
+}
 
 function assert (condition, message) {
   if (!condition) throw new Error(`[ScriptVerse] ${message}`)
@@ -27,15 +38,34 @@ function validateManifest (manifest) {
   return manifest
 }
 
+function physicalAt (x, y) {
+  return {
+    original: ENGINE.physicalComponent,
+    majorVersion: 0,
+    config: {
+      pos: { x, y, z: 0 }
+    }
+  }
+}
+
 function buildHeroPlaceholder (manifest) {
   const { x, y } = manifest.map.playerStart
   return {
     id: manifest.engine.heroId || 'Hero Placeholder',
-    // The concrete ThangType is intentionally resolved by the integration
-    // layer so ScriptVerse does not encode an upstream hero asset here.
-    thangType: null,
+    // Provisional visual/runtime stand-in. Level.denormalizeThang already knows
+    // how to replace Hero Placeholder with the session hero where appropriate.
+    thangType: ENGINE.knightHeroThangType,
     scriptverseRole: 'hero',
-    components: [],
+    components: [
+      physicalAt(x, y),
+      {
+        original: ENGINE.programmableComponent,
+        majorVersion: 0,
+        config: {
+          programmableMethods: manifest.learning.availableMethods || []
+        }
+      }
+    ],
     scriptverseConfig: {
       position: { x, y },
       availableMethods: manifest.learning.availableMethods || []
@@ -47,9 +77,11 @@ function buildGoalMarker (manifest) {
   const { id, x, y } = manifest.map.goal
   return {
     id,
-    thangType: null,
+    // Reuse the engine's generic placeholder marker only for the integration
+    // milestone. This will become a ScriptVerse-owned officer/waypoint asset.
+    thangType: ENGINE.placeholderFlagThangType,
     scriptverseRole: 'goal-marker',
-    components: [],
+    components: [physicalAt(x, y)],
     scriptverseConfig: {
       position: { x, y }
     }
@@ -63,6 +95,7 @@ function adaptLevelManifest (input) {
     name: manifest.name,
     slug: manifest.slug,
     type: manifest.engine.levelType || 'hero',
+    version: { major: 0, minor: 1, isLatestMajor: true, isLatestMinor: true },
     scriptverse: {
       format: manifest.format,
       world: manifest.world,
@@ -89,6 +122,7 @@ function adaptLevelManifest (input) {
 }
 
 module.exports = {
+  ENGINE,
   SUPPORTED_FORMAT,
   validateManifest,
   adaptLevelManifest
