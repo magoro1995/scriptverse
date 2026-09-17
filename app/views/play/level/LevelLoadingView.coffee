@@ -100,8 +100,6 @@ module.exports = class LevelLoadingView extends CocoView
     @$('.start-level-button').text($.i18n.t(@buttonTranslationKey))
 
     Vue.nextTick(=>
-      # TODO: move goals to vuex where everyone can check together which goals are visible.
-      # Use that instead of looking into the Vue result
       numGoals = goalContainer.find('li').length
       if numGoals
         goalContainer.removeClass('secret')
@@ -139,11 +137,24 @@ module.exports = class LevelLoadingView extends CocoView
   showReady: ->
     return if @shownReady
     @shownReady = true
+    # Repository-owned ScriptVerse levels do not need CodeCombat's separate
+    # Start Level gate. At this point PlayLevelView has already created the
+    # Surface, Tome, controls and world, so use the normal unveil lifecycle
+    # instead of deleting the loading view directly (which previously broke
+    # Run/Submit and the HUD).
+    scriptverseLevel = @level?.get('scriptverse') or @options.level?.get('scriptverse')
+    if scriptverseLevel
+      _.delay (=>
+        return if @destroyed or @unveiled
+        @startUnveiling()
+        @unveil true
+      ), 100
+      return
     if @showCoco
-      _.delay @finishShowingReady, 100  # Let any blocking JS hog the main thread before we show that we're done.
+      _.delay @finishShowingReady, 100
     else
       @unveilPreviewTime = new Date().getTime()
-      _.delay @startUnveiling, 100  # Let any blocking JS hog the main thread before we show that we're done.
+      _.delay @startUnveiling, 100
 
   finishShowingReady: =>
     return if @destroyed
@@ -156,18 +167,17 @@ module.exports = class LevelLoadingView extends CocoView
       @startUnveiling()
       @unveil true
     else
-      @playSound 'level_loaded', 0.75  # old: loading_ready
+      @playSound 'level_loaded', 0.75
       @$el.find('.progress').hide()
       @$el.find('.start-level-button').show()
       @unveil false
 
   startUnveiling: (e) ->
-    # todo: this file, coco and ozar do similar things with different steps, should be refactored
     if @showCoco
       @playSound 'menu-button-click'
       @unveiling = true
       Backbone.Mediator.publish 'level:loading-view-unveiling', {}
-      _.delay @onClickStartLevel, 1000  # If they never mouse-up for the click (or a modal shows up and interrupts the click), do it anyway.
+      _.delay @onClickStartLevel, 1000
     else
       levelSlug = @level?.get('slug') or @options?.level?.get('slug')
       timespent = (new Date().getTime() - @unveilPreviewTime) / 1000
@@ -176,7 +186,7 @@ module.exports = class LevelLoadingView extends CocoView
         label: 'level loading'
         level: levelSlug
         levelID: levelSlug
-        timespent # This is no longer a very useful metric as it now happens right away.
+        timespent
       }
       details = @$('#loading-details')?[0]
       unless details?.style?.display == 'none'
@@ -207,7 +217,6 @@ module.exports = class LevelLoadingView extends CocoView
       @unveilLoadingPreview duration
 
   unveilLoadingFull: ->
-    # Get rid of the loading details screen entirely--the level is totally ready.
     unless @unveiling
       Backbone.Mediator.publish 'level:loading-view-unveiling', {}
       @unveiling = true
@@ -229,13 +238,12 @@ module.exports = class LevelLoadingView extends CocoView
       }
 
   unveilLoadingPreview: (duration) ->
-    # Move the loading details screen over the code editor to preview the level.
     return if @$el.hasClass 'preview-screen'
     $('#canvas-wrapper').addClass 'preview-overlay'
     @$el.addClass('preview-screen')
     @$loadingDetails.addClass('preview')
     @resize()
-    @onWindowResize = _.debounce @onWindowResize, 700  # Wait a bit for other views to resize before we resize
+    @onWindowResize = _.debounce @onWindowResize, 700
     $(window).on 'resize', @onWindowResize
     if @intro
       @$el.find('.progress-or-start-container').addClass('intro-footer')
@@ -250,7 +258,6 @@ module.exports = class LevelLoadingView extends CocoView
     maxHeight = Math.max maxHeight, 0.5 * $(window).innerHeight()
     minHeight = $('#code-area').outerHeight(true)
     if $('#code-area').offset().top > 100
-      # Code area is on the bottom; be just as tall as the game area instead
       minHeight = $('#canvas-wrapper').outerHeight(true) + $('#control-bar-view').outerHeight(true)
     minHeight -= 10
     minHeight = Math.min minHeight, maxHeight
@@ -258,74 +265,44 @@ module.exports = class LevelLoadingView extends CocoView
     @$loadingDetails.css minHeight: minHeight, maxHeight: maxHeight
     if @intro
       $intro = @$el.find('.intro-doc')
-      $intro.css height: minHeight - $intro.offset().top - @$el.find('.progress-or-start-container').outerHeight() - 30 - 20
-      _.defer -> $intro.find('.nano').nanoScroller alwaysVisible: true
+      $intro.css maxHeight: maxHeight - goalsHeight - 100 - 0.11 * $(window).innerHeight()
+
+  onWindowResize: ->
+    @resize()
+
+  unveilIntro: ->
+    return unless @intro
+    @$('.intro-doc-content').html marked(@intro.body or '')
 
   unveilWings: (duration) ->
-    @playSound 'loading-view-unveil', 0.5
-    @$el.find('.left-wing').css left: '-100%', backgroundPosition: 'right -400px top 0'
-    @$el.find('.right-wing').css right: '-100%', backgroundPosition: 'left -400px top 0'
-    $('#level-footer-background').detach().appendTo('#page-container').slideDown(duration) unless @level?.isType('web-dev')
-
-  unveilIntro: =>
-    return if @destroyed or not @intro or @unveiled
-    language = @session?.get('codeLanguage')
-    html = marked aetherUtils.filterMarkdownCodeLanguages(utils.i18n(@intro, 'body'), language)
-    @$el.find('.intro-doc').removeClass('hidden').find('.intro-doc-content').html html
-    @resize()
-    @configureACEEditors()
+    leftWing = @$el.find('.loading-wing.left')
+    rightWing = @$el.find('.loading-wing.right')
+    leftWing.css left: -leftWing.outerWidth(true)
+    rightWing.css right: -rightWing.outerWidth(true)
 
   onUnveilEnded: =>
     return if @destroyed
     Backbone.Mediator.publish 'level:loading-view-unveiled', view: @
 
-  onWindowResize: (e) =>
-    return if @destroyed
-    @$loadingDetails.css transition: 'none'
-    @resize()
+  onSubscriptionRequired: ->
+    @$('.start-level-button').hide()
+    @$('.start-subscription-button').show()
 
-  onSubscriptionRequired: (e) ->
-    return if @showOzaria
-    @$el.find('.level-loading-goals, .tip, .progress-or-start-container, .could-not-load').hide()
-    @$el.find('.subscription-required').show()
-    @loadingErrorExplained = true
+  onCourseMembershipRequired: ->
+    @$('.start-level-button').hide()
 
-  onCourseMembershipRequired: (e) ->
-    @$el.find('.level-loading-goals, .tip, .progress-or-start-container, .could-not-load').hide()
-    @$el.find('.course-membership-required').show()
-    @loadingErrorExplained = true
+  onLicenseRequired: ->
+    @$('.start-level-button').hide()
 
-  onLicenseRequired: (e) ->
-    @$el.find('.level-loading-goals, .tip, .progress-or-start-container, .could-not-load').hide()
-    @$el.find('.license-required').show()
-    @loadingErrorExplained = true
-
-  onLevelLocked: (e) ->
-    @$el.find('.level-loading-goals, .tip, .progress-or-start-container, .could-not-load').hide()
-    @$el.find('.level-locked').show()
-    @loadingErrorExplained = true
-
-  onLoadError: (resource) ->
-    startCase = (str) -> str.charAt(0).toUpperCase() + str.slice(1)
-    @$el.find('.level-loading-goals, .tip, .progress-or-start-container').hide()
-    if resource.resource.jqxhr.status is 404
-      @$el.find('.resource-not-found>span').text($.i18n.t('loading_error.resource_not_found', {resource: startCase(resource.resource.name)}))
-      @$el.find('.resource-not-found').show()
-    else unless @loadingErrorExplained
-      @$el.find('.could-not-load').show()
-
-  onClickStartSubscription: (e) ->
-    @openModalView new SubscribeModal()
-    levelSlug = @level?.get('slug') or @options.level?.get('slug')
-    # TODO: Added levelID on 2/9/16. Remove level property and associated AnalyticsLogEvent 'properties.level' index later.
-    window.tracker?.trackEvent 'Show subscription modal', category: 'Subscription', label: 'level loading', level: levelSlug, levelID: levelSlug
+  onLevelLocked: ->
+    @$('.start-level-button').hide()
 
   onSubscribed: ->
-    document.location.reload()
+    @$('.start-subscription-button').hide()
+    @$('.start-level-button').show()
 
-  destroy: ->
-    $(window).off 'resize', @onWindowResize
-    silentStore = { commit: _.noop, dispatch: _.noop }
-    @levelGoalsComponent?.$destroy()
-    @levelGoalsComponent?.$store = silentStore
-    super()
+  onClickStartSubscription: ->
+    @openModalView new SubscribeModal()
+
+  onLoadError: (resource) ->
+    console.error 'Level loading failed:', resource
