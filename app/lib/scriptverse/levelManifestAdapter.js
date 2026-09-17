@@ -148,41 +148,14 @@ function buildDevelopmentBackground (manifest) {
 }
 
 /**
- * During the integration phase semantic scenery is represented by lightweight
- * engine Thangs using the same generic visual skin. Their identity, geometry,
- * collision intent and meaning remain ScriptVerse-owned. Dedicated Promised
- * Land ThangTypes can replace this renderer later without touching manifests.
+ * Semantic scenery remains level data until each ScriptVerse scenery kind has a
+ * compatible renderer. A full-map background ThangType cannot be safely reused
+ * as a tent/path/water sprite: its own display geometry tiles the entire map.
+ * Keeping scenery declarative here prevents inherited artwork from corrupting
+ * the authored camp layout while preserving the data for the upcoming renderer.
  */
-function buildSceneryThang (scenery) {
-  return {
-    id: `ScriptVerse Scenery: ${scenery.id}`,
-    thangType: ENGINE.thangTypes.developmentBackground,
-    scriptverseRole: 'scenery',
-    components: [
-      component(ENGINE.components.exists),
-      physicalAt(scenery.x, scenery.y, 0.75, {
-        rotation: 0,
-        width: scenery.width,
-        height: scenery.height,
-        depth: scenery.kind === 'water' ? 0.25 : 1
-      }),
-      component(ENGINE.commonComponents.scales, {
-        scaleFactor: Math.max(0.05, Math.min(0.18, Math.max(scenery.width, scenery.height) / 100)),
-        scaleFactorX: 0
-      })
-    ],
-    scriptverseConfig: {
-      sceneryId: scenery.id,
-      kind: scenery.kind,
-      collision: Boolean(scenery.collision),
-      bounds: { x: scenery.x, y: scenery.y, width: scenery.width, height: scenery.height },
-      temporaryRenderer: true
-    }
-  }
-}
-
 function buildScenery (manifest) {
-  return (manifest.map.scenery || []).map(buildSceneryThang)
+  return (manifest.map.scenery || []).map(item => Object.assign({}, item))
 }
 
 function adaptLevelManifest (input) {
@@ -206,11 +179,11 @@ function adaptLevelManifest (input) {
       mapTheme: manifest.map.theme,
       mapGeometry,
       landmarks: manifest.map.landmarks || {},
-      scenery: (manifest.map.scenery || []).map(item => Object.assign({}, item)),
+      scenery,
       engineProfile: profile.id
     },
     goals: manifest.mission.goals,
-    thangs: [buildDevelopmentBackground(manifest), ...scenery, buildHeroPlaceholder(manifest), buildGoalMarker(manifest)],
+    thangs: [buildDevelopmentBackground(manifest), buildHeroPlaceholder(manifest), buildGoalMarker(manifest)],
     systems: profile.systems.map(({ original, majorVersion }) => ({ original, majorVersion })),
     scripts: [],
     documentation: { specificArticles: [] },
