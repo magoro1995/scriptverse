@@ -10,16 +10,12 @@
  * art can replace them without changing the manifest format.
  */
 
+const { BASE_COMPONENTS, HERO_MOVEMENT_PROFILE, assertProfileResolved } = require('./engineProfile')
+
 const SUPPORTED_FORMAT = 'scriptverse-level-v1'
 
-// Existing engine identities. These are reusable infrastructure references,
-// not copied level content.
 const ENGINE = {
-  components: {
-    physical: '524b75ad7fc0f6d519000001',
-    programmable: '524b7b5a7fc0f6d51900000e',
-    moves: '524b7b8c7fc0f6d519000013'
-  },
+  components: BASE_COMPONENTS,
   thangTypes: {
     knightHero: '529ffbf1cf1818f2be000001',
     placeholderFlag: '53fa25f25bc220000052c2be'
@@ -42,36 +38,28 @@ function validateManifest (manifest) {
   return manifest
 }
 
+function component (original, config = {}) {
+  return { original, majorVersion: 0, config }
+}
+
 function physicalAt (x, y) {
-  return {
-    original: ENGINE.components.physical,
-    majorVersion: 0,
-    config: {
-      pos: { x, y, z: 0 }
-    }
-  }
+  return component(ENGINE.components.physical, { pos: { x, y, z: 0 } })
 }
 
 function programmableFor (methods) {
-  return {
-    original: ENGINE.components.programmable,
-    majorVersion: 0,
-    config: {
-      programmableMethods: methods || []
-    }
-  }
+  return component(ENGINE.components.programmable, { programmableMethods: methods || [] })
 }
 
 function buildHeroPlaceholder (manifest) {
   const { x, y } = manifest.map.playerStart
   return {
     id: manifest.engine.heroId || 'Hero Placeholder',
-    // Provisional visual/runtime stand-in. Level.denormalizeThang already knows
-    // how to replace Hero Placeholder with the session hero where appropriate.
     thangType: ENGINE.thangTypes.knightHero,
     scriptverseRole: 'hero',
     components: [
+      component(ENGINE.components.exists),
       physicalAt(x, y),
+      component(ENGINE.components.moves),
       programmableFor(manifest.learning.availableMethods)
     ],
     scriptverseConfig: {
@@ -85,19 +73,19 @@ function buildGoalMarker (manifest) {
   const { id, x, y } = manifest.map.goal
   return {
     id,
-    // Reuse the engine's generic placeholder marker only for the integration
-    // milestone. This will become a ScriptVerse-owned officer/waypoint asset.
     thangType: ENGINE.thangTypes.placeholderFlag,
     scriptverseRole: 'goal-marker',
-    components: [physicalAt(x, y)],
-    scriptverseConfig: {
-      position: { x, y }
-    }
+    components: [
+      component(ENGINE.components.exists),
+      physicalAt(x, y)
+    ],
+    scriptverseConfig: { position: { x, y } }
   }
 }
 
 function adaptLevelManifest (input) {
   const manifest = validateManifest(input)
+  const profile = assertProfileResolved(HERO_MOVEMENT_PROFILE)
 
   return {
     name: manifest.name,
@@ -111,21 +99,14 @@ function adaptLevelManifest (input) {
       scripture: manifest.scripture,
       learning: manifest.learning,
       missionBriefing: manifest.mission.briefing,
-      mapTheme: manifest.map.theme
+      mapTheme: manifest.map.theme,
+      engineProfile: profile.id
     },
     goals: manifest.mission.goals,
-    thangs: [
-      buildHeroPlaceholder(manifest),
-      buildGoalMarker(manifest)
-    ],
-    // Systems are DB-backed executable models. They are intentionally not
-    // guessed here. The loader resolves them from a ScriptVerse engine profile
-    // once their stable original/version pairs have been verified.
-    systems: [],
+    thangs: [buildHeroPlaceholder(manifest), buildGoalMarker(manifest)],
+    systems: profile.systems.map(({ original, majorVersion }) => ({ original, majorVersion })),
     scripts: [],
-    documentation: {
-      specificArticles: []
-    },
+    documentation: { specificArticles: [] },
     requiredCapabilities: manifest.engine.requiredCapabilities || [],
     starterCode: manifest.mission.starterCode,
     defaultLanguage: manifest.learning.language || 'python'
