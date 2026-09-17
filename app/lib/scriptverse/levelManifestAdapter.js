@@ -14,14 +14,15 @@ const { BASE_COMPONENTS, HERO_MOVEMENT_PROFILE, assertProfileResolved } = requir
 
 const SUPPORTED_FORMAT = 'scriptverse-level-v1'
 const DEFAULT_WORLD_TIME_LIMIT_SECONDS = 12
+const DEFAULT_MAP_BOUNDS = { width: 42, height: 36 }
 
 const ENGINE = {
   components: BASE_COMPONENTS,
   thangTypes: {
     captainHero: '529ec584c423d4e83b000014',
     goalTrigger: '52bcbf0dce43b70000000006',
-    // Temporary generic engine background used only to validate ScriptVerse's
-    // map pipeline. Original Promised Land artwork will replace this stand-in.
+    // Temporary visual skin only. World geometry comes from the ScriptVerse
+    // manifest and must never be inferred from this inherited artwork.
     developmentBackground: '563d3c02f5b71e8405fabff8'
   },
   commonComponents: {
@@ -48,6 +49,9 @@ function validateManifest (manifest) {
   assert(manifest.mission && Array.isArray(manifest.mission.goals) && manifest.mission.goals.length, 'Level manifest requires at least one goal.')
   assert(manifest.map && manifest.map.playerStart, 'Level manifest requires a player start position.')
   assert(manifest.map && manifest.map.goal && manifest.map.goal.id, 'Level manifest requires a goal marker.')
+  if (manifest.map.bounds) {
+    assert(manifest.map.bounds.width > 0 && manifest.map.bounds.height > 0, 'Map bounds must be positive.')
+  }
   return manifest
 }
 
@@ -103,19 +107,37 @@ function buildGoalMarker (manifest) {
   }
 }
 
-function buildDevelopmentBackground () {
+function mapGeometryFor (manifest) {
+  const bounds = Object.assign({}, DEFAULT_MAP_BOUNDS, manifest.map.bounds || {})
+  return {
+    width: bounds.width,
+    height: bounds.height,
+    centerX: bounds.width / 2 - 0.5,
+    centerY: bounds.height / 2 + 0.5
+  }
+}
+
+function buildDevelopmentBackground (manifest) {
+  const geometry = mapGeometryFor(manifest)
   return {
     id: 'ScriptVerse World Background',
     thangType: ENGINE.thangTypes.developmentBackground,
-    scriptverseRole: 'world-background',
+    scriptverseRole: 'temporary-visual-skin',
     components: [
       component(ENGINE.components.exists),
-      physicalAt(20.5, 18.5, 1, { rotation: 0, width: 42, height: 36, depth: 2 }),
+      physicalAt(geometry.centerX, geometry.centerY, 1, {
+        rotation: 0,
+        width: geometry.width,
+        height: geometry.height,
+        depth: 2
+      }),
       component(ENGINE.commonComponents.scales, { scaleFactor: 0.29, scaleFactorX: 0 })
     ],
     scriptverseConfig: {
       temporary: true,
-      purpose: 'Validate ScriptVerse map rendering before original Promised Land artwork is introduced.'
+      geometrySource: 'manifest.map.bounds',
+      theme: manifest.map.theme,
+      purpose: 'Temporary rendering skin. It does not define ScriptVerse gameplay coordinates or map layout.'
     }
   }
 }
@@ -123,6 +145,7 @@ function buildDevelopmentBackground () {
 function adaptLevelManifest (input) {
   const manifest = validateManifest(input)
   const profile = assertProfileResolved(HERO_MOVEMENT_PROFILE)
+  const mapGeometry = mapGeometryFor(manifest)
 
   return {
     name: manifest.name,
@@ -137,10 +160,12 @@ function adaptLevelManifest (input) {
       learning: manifest.learning,
       missionBriefing: manifest.mission.briefing,
       mapTheme: manifest.map.theme,
+      mapGeometry,
+      landmarks: manifest.map.landmarks || {},
       engineProfile: profile.id
     },
     goals: manifest.mission.goals,
-    thangs: [buildDevelopmentBackground(), buildHeroPlaceholder(manifest), buildGoalMarker(manifest)],
+    thangs: [buildDevelopmentBackground(manifest), buildHeroPlaceholder(manifest), buildGoalMarker(manifest)],
     systems: profile.systems.map(({ original, majorVersion }) => ({ original, majorVersion })),
     scripts: [],
     documentation: { specificArticles: [] },
