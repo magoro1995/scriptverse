@@ -2,7 +2,10 @@ extends /templates/core/modal-base
 block modal-header-content
   #victory-header.out
     #victory-title
-      if view.level.get('product', true) === 'codecombat-junior'
+      if view.level.get('scriptverse')
+        h1 SCRIPTVERSE VICTORY
+        .scriptverse-level-complete= view.level.get('name')
+      else if view.level.get('product', true) === 'codecombat-junior'
         img(src="/images/pages/play/modal/level_complete.png")
       else if !me.get('preferredLanguage') || me.get('preferredLanguage').split('-')[0] == 'en'
         img(src="/images/pages/play/level/modal/victory_word.png", draggable="false", data-i18n="[alt]play_level.victory")
@@ -107,7 +110,7 @@ block modal-body-content
 
 
 block modal-footer-content
-  #totals(class=(view.showShareGameWithTeacher ? "hide" : "") + (view.level.get("product", true) == "codecombat-junior" ? " codecombat-junior" : ""))
+  #totals(class=(view.showShareGameWithTeacher ? "hide" : "") + (view.level.get("product", true) == "codecombat-junior" ? " codecombat-junior" : "") + (view.level.get('scriptverse') ? " hide" : ""))
     .total-wrapper#xp-wrapper
       .total-count#xp-total 0
       if view.level.get("product", true) == "codecombat-junior"
@@ -171,7 +174,9 @@ block modal-footer-content
           button#share-level-btn.btn.btn-md.btn-success.btn-illustrated
             span(data-i18n='sharing.copy_url') Copy URL
 
-  if me.get('anonymous') && !features.noAuth && !showHourOfCodeDoneButton
+  if view.level.get('scriptverse')
+    .scriptverse-complete-message Mission complete. Continue your journey through Scripture and code.
+  else if me.get('anonymous') && !features.noAuth && !showHourOfCodeDoneButton
     .sign-up-poke.hide
       .sign-up-blurb(data-i18n="play_level.victory_sign_up_poke")
       button.btn.btn-illustrated.btn-warning.sign-up-button.btn-lg(data-dismiss="modal", data-i18n="play_level.victory_sign_up")
