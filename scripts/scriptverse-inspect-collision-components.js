@@ -2,7 +2,8 @@
 
 /**
  * Inspect only generic physics/collision component configuration from a known
- * good reference level. This is dependency metadata, not authored level content.
+ * good reference level. Instance overrides and inherited ThangType components
+ * are both reported. This is dependency metadata, not authored level content.
  *
  * Usage:
  *   node scripts/scriptverse-inspect-collision-components.js dungeons-of-kithgard
@@ -33,21 +34,51 @@ function getJSON (url) {
   })
 }
 
+function component (components, original) {
+  return (components || []).find(c => c.original === original) || null
+}
+
 async function main () {
   const level = await getJSON(`${origin}/db/level/${encodeURIComponent(slug)}`)
+  const typeCache = new Map()
   const rows = []
+
+  async function getType (id) {
+    if (!typeCache.has(id)) {
+      typeCache.set(id, getJSON(`${origin}/db/thang.type/${encodeURIComponent(id)}/version`).catch(error => ({ _lookupError: error.message })))
+    }
+    return typeCache.get(id)
+  }
+
   for (const thang of level.thangs || []) {
-    const collides = (thang.components || []).find(c => c.original === COLLIDES)
-    if (!collides) continue
-    const physical = (thang.components || []).find(c => c.original === PHYSICAL)
+    const type = await getType(thang.thangType)
+    const instanceCollides = component(thang.components, COLLIDES)
+    const inheritedCollides = component(type.components, COLLIDES)
+    if (!instanceCollides && !inheritedCollides) continue
+
+    const instancePhysical = component(thang.components, PHYSICAL)
+    const inheritedPhysical = component(type.components, PHYSICAL)
     rows.push({
       id: thang.id,
       thangType: thang.thangType,
-      physical: physical ? physical.config || {} : null,
-      collides: collides.config || {}
+      typeName: type.name,
+      instance: {
+        physical: instancePhysical ? instancePhysical.config || {} : null,
+        collides: instanceCollides ? instanceCollides.config || {} : null
+      },
+      inherited: {
+        physical: inheritedPhysical ? inheritedPhysical.config || {} : null,
+        collides: inheritedCollides ? inheritedCollides.config || {} : null
+      },
+      lookupError: type._lookupError || null
     })
   }
-  process.stdout.write(`${JSON.stringify({ referenceLevel: slug, collisionThangs: rows }, null, 2)}\n`)
+
+  process.stdout.write(`${JSON.stringify({
+    referenceLevel: slug,
+    uniqueThangTypesInspected: typeCache.size,
+    collisionThangs: rows
+  }, null, 2)}\n`)
 }
 
 main().catch(error => {
