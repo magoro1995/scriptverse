@@ -21,7 +21,9 @@ const ENGINE = {
     // Captain is the reference Hero Placeholder used by the verified movement
     // level. The local session may still replace it through normal heroConfig.
     captainHero: '529ec584c423d4e83b000014',
-    placeholderFlag: '53fa25f25bc220000052c2be'
+    // Generic engine trigger. Its ThangType supplies the behavior that publishes
+    // world:thang-touched-goal when the hero reaches the destination.
+    goalTrigger: '52bcbf0dce43b70000000006'
   },
   commonComponents: {
     says: '524b7b9f7fc0f6d519000015',
@@ -85,10 +87,6 @@ function buildHeroPlaceholder (manifest) {
       physicalAt(x, y),
       programmableFor(manifest),
       component(ENGINE.commonComponents.says),
-      // Plans supplies the hero planning lifecycle required by Existence. The
-      // engine also needs a finite simulation horizon so the preload world can
-      // become `ended`, allowing Surface.showLevel() to publish level:started.
-      // GoalManager still decides success; this is only the time budget.
       component(ENGINE.commonComponents.plans, { worldEndsAfter }),
       component(ENGINE.commonComponents.equips, {
         inventory: { feet: ENGINE.items.simpleBoots }
@@ -105,8 +103,8 @@ function buildGoalMarker (manifest) {
   const { id, x, y } = manifest.map.goal
   return {
     id,
-    thangType: ENGINE.thangTypes.placeholderFlag,
-    scriptverseRole: 'goal-marker',
+    thangType: ENGINE.thangTypes.goalTrigger,
+    scriptverseRole: 'goal-trigger',
     components: [
       component(ENGINE.components.exists),
       physicalAt(x, y, 1)
