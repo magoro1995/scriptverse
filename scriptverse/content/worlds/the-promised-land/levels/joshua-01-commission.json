@@ -1,0 +1,50 @@
+{
+  "format": "scriptverse-level-v1",
+  "slug": "joshua-01-commission",
+  "name": "Joshua's Commission",
+  "world": "the-promised-land",
+  "sequence": 1,
+  "scripture": {
+    "book": "Joshua",
+    "chapter": 1,
+    "verses": "1-11",
+    "summary": "After the death of Moses, the LORD commissions Joshua to lead Israel across the Jordan. Joshua commands the officers to prepare the people for the crossing."
+  },
+  "learning": {
+    "language": "python",
+    "newConcepts": ["syntax", "sequences", "method-calls"],
+    "reinforces": [],
+    "availableMethods": ["moveRight", "moveLeft", "moveUp", "moveDown"]
+  },
+  "mission": {
+    "briefing": "Guide Joshua through the camp and report to the officers of Israel as preparations begin to cross the Jordan.",
+    "starterCode": "# Guide Joshua through the camp.\nhero.moveRight()",
+    "goals": [
+      {
+        "id": "reach-officers",
+        "name": "Reach the officers of Israel",
+        "getToLocations": {
+          "who": ["Hero Placeholder"],
+          "targets": ["Israelite Officers Goal"]
+        }
+      }
+    ]
+  },
+  "map": {
+    "theme": "israelite-camp-east-of-jordan",
+    "playerStart": { "x": 18, "y": 18 },
+    "goal": { "id": "Israelite Officers Goal", "x": 42, "y": 30 },
+    "designNotes": [
+      "Keep the camp open and readable rather than corridor-like.",
+      "Place tents mainly around the edges and use only a few natural obstacles.",
+      "Preserve visual continuity toward the Jordan for later levels."
+    ]
+  },
+  "engine": {
+    "status": "content-manifest",
+    "levelType": "hero",
+    "heroId": "Hero Placeholder",
+    "requiredCapabilities": ["programmable", "physical", "moves", "goal-touch"],
+    "integrationNotes": "This file is original ScriptVerse content. The adapter that converts it into the inherited Level/Thang/System representation is the next implementation step."
+  }
+}
