@@ -17,8 +17,18 @@ const SUPPORTED_FORMAT = 'scriptverse-level-v1'
 const ENGINE = {
   components: BASE_COMPONENTS,
   thangTypes: {
-    knightHero: '529ffbf1cf1818f2be000001',
+    // Captain is the reference Hero Placeholder used by the verified movement
+    // level. The local session may still replace it through normal heroConfig.
+    captainHero: '529ec584c423d4e83b000014',
     placeholderFlag: '53fa25f25bc220000052c2be'
+  },
+  commonComponents: {
+    says: '524b7b9f7fc0f6d519000015',
+    plans: '524b7b517fc0f6d51900000d',
+    equips: '53e217d253457600003e3ebb'
+  },
+  items: {
+    simpleBoots: '53e237bf53457600003e3f05'
   }
 }
 
@@ -42,8 +52,8 @@ function component (original, config = {}) {
   return { original, majorVersion: 0, config }
 }
 
-function physicalAt (x, y) {
-  return component(ENGINE.components.physical, { pos: { x, y, z: 0 } })
+function physicalAt (x, y, z = 0.5) {
+  return component(ENGINE.components.physical, { pos: { x, y, z }, width: 1 })
 }
 
 // Tome treats programmableMethods as spells. Hero levels expose one writable
@@ -54,13 +64,9 @@ function programmableFor (manifest) {
     programmableMethods: {
       plan: {
         name: 'plan',
-        source: '// Write your ScriptVerse solution here.\n',
+        source: '// Guide Joshua through the camp.\nhero.moveRight();\n',
         languages: { python: starterCode },
-        parameters: [],
-        permissions: {
-          read: ['humans'],
-          readwrite: ['humans']
-        }
+        parameters: []
       }
     }
   })
@@ -70,13 +76,20 @@ function buildHeroPlaceholder (manifest) {
   const { x, y } = manifest.map.playerStart
   return {
     id: manifest.engine.heroId || 'Hero Placeholder',
-    thangType: ENGINE.thangTypes.knightHero,
+    thangType: ENGINE.thangTypes.captainHero,
     scriptverseRole: 'hero',
     components: [
       component(ENGINE.components.exists),
       physicalAt(x, y),
-      component(ENGINE.components.moves),
-      programmableFor(manifest)
+      programmableFor(manifest),
+      component(ENGINE.commonComponents.says),
+      // Existence expects an Ownable planning method during system startup.
+      // Plans supplies the normal hero planning lifecycle used by the verified
+      // movement reference level.
+      component(ENGINE.commonComponents.plans, { worldEndsAfter: 3 }),
+      component(ENGINE.commonComponents.equips, {
+        inventory: { feet: ENGINE.items.simpleBoots }
+      })
     ],
     scriptverseConfig: {
       position: { x, y },
@@ -93,7 +106,7 @@ function buildGoalMarker (manifest) {
     scriptverseRole: 'goal-marker',
     components: [
       component(ENGINE.components.exists),
-      physicalAt(x, y)
+      physicalAt(x, y, 1)
     ],
     scriptverseConfig: { position: { x, y } }
   }
