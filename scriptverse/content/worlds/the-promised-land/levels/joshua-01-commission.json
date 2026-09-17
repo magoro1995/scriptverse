@@ -40,12 +40,23 @@
       "officersArea": { "x": 24, "y": 12 },
       "campCenter": { "x": 18, "y": 18 }
     },
+    "scenery": [
+      { "id": "northwest-tents", "kind": "tent-cluster", "x": 6, "y": 30, "width": 8, "height": 5, "collision": false },
+      { "id": "north-tents", "kind": "tent-cluster", "x": 20, "y": 31, "width": 9, "height": 4, "collision": false },
+      { "id": "southwest-tents", "kind": "tent-cluster", "x": 6, "y": 7, "width": 8, "height": 5, "collision": false },
+      { "id": "south-tents", "kind": "tent-cluster", "x": 18, "y": 5, "width": 8, "height": 4, "collision": false },
+      { "id": "officers-camp", "kind": "officers-area", "x": 24, "y": 12, "width": 7, "height": 5, "collision": false },
+      { "id": "camp-path-east", "kind": "path", "x": 18, "y": 24, "width": 12, "height": 4, "collision": false },
+      { "id": "camp-path-south", "kind": "path", "x": 24, "y": 18, "width": 4, "height": 12, "collision": false },
+      { "id": "jordan-river", "kind": "water", "x": 39, "y": 18, "width": 6, "height": 36, "collision": true }
+    ],
     "designNotes": [
       "Keep the camp open and readable rather than corridor-like.",
       "Place tents mainly around the edges and use only a few natural obstacles.",
       "Preserve visual continuity toward the Jordan on the east edge for later levels.",
       "Joshua begins in the northwest portion of the playable camp and reaches the officers by moving east and then south.",
-      "Level 1 uses one eastward move followed by one southward move so the first victory demonstrates execution order and a two-command sequence."
+      "Level 1 uses one eastward move followed by one southward move so the first victory demonstrates execution order and a two-command sequence.",
+      "Scenery is authored as semantic ScriptVerse data. Engine-specific temporary art must be selected by the adapter, not embedded in this manifest."
     ]
   },
   "engine": {
