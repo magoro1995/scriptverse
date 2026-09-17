@@ -1,9 +1,10 @@
 CocoClass = require 'core/CocoClass'
 createjs = require 'lib/createjs-parts'
 
-# Lightweight original ScriptVerse terrain renderer. It intentionally uses
-# procedural CreateJS shapes instead of inherited dungeon art. Semantic map
-# coordinates remain the source of truth for both visuals and physics.
+# Lightweight original ScriptVerse terrain renderer. Semantic map coordinates
+# remain the source of truth for visuals and physics. The complete procedural
+# terrain is cached to a bitmap before entering StageGL: uncached CreateJS Shape
+# vector graphics are not rendered by the engine's WebGL gameplay stage.
 module.exports = class ScriptVerseMapOverlay extends CocoClass
   constructor: (options = {}) ->
     super()
@@ -15,6 +16,7 @@ module.exports = class ScriptVerseMapOverlay extends CocoClass
 
   destroy: ->
     @layer?.removeChild @container if @container?
+    @container?.uncache?()
     super()
 
   build: ->
@@ -22,8 +24,8 @@ module.exports = class ScriptVerseMapOverlay extends CocoClass
     @container.mouseEnabled = false
 
     geometry = @map.geometry or {}
-    if geometry.width? and geometry.height?
-      @drawTerrain geometry
+    return unless geometry.width? and geometry.height?
+    @drawTerrain geometry
 
     # Paths first so camp objects sit naturally above them.
     for item in (@map.scenery or []) when item.kind is 'path'
@@ -35,7 +37,23 @@ module.exports = class ScriptVerseMapOverlay extends CocoClass
     for item in (@map.scenery or []) when item.kind is 'officers-area'
       @drawOfficersArea item
 
+    # StageGL cannot display ordinary uncached Shape vector graphics. Rasterize
+    # this original ScriptVerse terrain once, then let the native Land layer
+    # transform the cached bitmap together with the world/camera.
+    bounds = @worldSurfaceBounds geometry
+    padding = 8
+    @container.cache bounds.x - padding, bounds.y - padding, bounds.width + padding * 2, bounds.height + padding * 2, 1
     @layer.addChild @container
+
+  worldSurfaceBounds: (geometry) ->
+    a = @camera.worldToSurface {x: 0, y: 0}
+    b = @camera.worldToSurface {x: geometry.width, y: geometry.height}
+    {
+      x: Math.min(a.x, b.x)
+      y: Math.min(a.y, b.y)
+      width: Math.abs(b.x - a.x)
+      height: Math.abs(b.y - a.y)
+    }
 
   surfaceBounds: (item) ->
     left = item.x - item.width / 2
@@ -50,23 +68,16 @@ module.exports = class ScriptVerseMapOverlay extends CocoClass
     }
 
   drawTerrain: (geometry) ->
-    a = @camera.worldToSurface {x: 0, y: 0}
-    b = @camera.worldToSurface {x: geometry.width, y: geometry.height}
-    x = Math.min a.x, b.x
-    y = Math.min a.y, b.y
-    w = Math.abs b.x - a.x
-    h = Math.abs b.y - a.y
-
+    b = @worldSurfaceBounds geometry
     ground = new createjs.Shape()
-    ground.graphics.beginFill('#b9955d').drawRect(x, y, w, h).endFill()
+    ground.graphics.beginFill('#b9955d').drawRect(b.x, b.y, b.width, b.height).endFill()
     @container.addChild ground
 
-    # Sparse deterministic marks give the ground texture without external art.
     texture = new createjs.Shape()
     g = texture.graphics
     for i in [0...80]
-      px = x + ((i * 73) % 97) / 97 * w
-      py = y + ((i * 47) % 89) / 89 * h
+      px = b.x + ((i * 73) % 97) / 97 * b.width
+      py = b.y + ((i * 47) % 89) / 89 * b.height
       r = 1 + (i % 3)
       g.beginFill(if i % 2 then '#a98450' else '#c5a46d').drawCircle(px, py, r).endFill()
     texture.alpha = 0.38
