@@ -1,10 +1,12 @@
 'use strict'
 
 const { adaptLevelManifest } = require('./levelManifestAdapter')
-const joshua01 = require('../../../scriptverse/content/worlds/the-promised-land/levels/joshua-01-commission.json')
+const jordan01 = require('../../../scriptverse/content/worlds/the-promised-land/levels/joshua-01-crossing-the-jordan.json')
+const commissionPrototype = require('../../../scriptverse/content/worlds/the-promised-land/levels/joshua-01-commission.json')
 
 const manifests = {
-  [joshua01.slug]: joshua01
+  [jordan01.slug]: jordan01,
+  [commissionPrototype.slug]: commissionPrototype
 }
 
 function normalizeLevelID (levelID) {
