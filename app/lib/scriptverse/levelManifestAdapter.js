@@ -18,17 +18,17 @@ const DEFAULT_WORLD_TIME_LIMIT_SECONDS = 12
 const ENGINE = {
   components: BASE_COMPONENTS,
   thangTypes: {
-    // Captain is the reference Hero Placeholder used by the verified movement
-    // level. The local session may still replace it through normal heroConfig.
     captainHero: '529ec584c423d4e83b000014',
-    // Generic engine trigger. Its ThangType supplies the behavior that publishes
-    // world:thang-touched-goal when the hero reaches the destination.
-    goalTrigger: '52bcbf0dce43b70000000006'
+    goalTrigger: '52bcbf0dce43b70000000006',
+    // Temporary generic engine background used only to validate ScriptVerse's
+    // map pipeline. Original Promised Land artwork will replace this stand-in.
+    developmentBackground: '563d3c02f5b71e8405fabff8'
   },
   commonComponents: {
     says: '524b7b9f7fc0f6d519000015',
     plans: '524b7b517fc0f6d51900000d',
-    equips: '53e217d253457600003e3ebb'
+    equips: '53e217d253457600003e3ebb',
+    scales: '52a399b98537a70000000003'
   },
   items: {
     simpleBoots: '53e237bf53457600003e3f05'
@@ -55,12 +55,10 @@ function component (original, config = {}) {
   return { original, majorVersion: 0, config }
 }
 
-function physicalAt (x, y, z = 0.5) {
-  return component(ENGINE.components.physical, { pos: { x, y, z }, width: 1 })
+function physicalAt (x, y, z = 0.5, dimensions = {}) {
+  return component(ENGINE.components.physical, Object.assign({ pos: { x, y, z }, width: 1 }, dimensions))
 }
 
-// Tome treats programmableMethods as spells. Hero levels expose one writable
-// spell named `plan`; APIs such as moveRight are properties used inside it.
 function programmableFor (manifest) {
   const starterCode = manifest.mission.starterCode || ''
   return component(ENGINE.components.programmable, {
@@ -88,14 +86,9 @@ function buildHeroPlaceholder (manifest) {
       programmableFor(manifest),
       component(ENGINE.commonComponents.says),
       component(ENGINE.commonComponents.plans, { worldEndsAfter }),
-      component(ENGINE.commonComponents.equips, {
-        inventory: { feet: ENGINE.items.simpleBoots }
-      })
+      component(ENGINE.commonComponents.equips, { inventory: { feet: ENGINE.items.simpleBoots } })
     ],
-    scriptverseConfig: {
-      position: { x, y },
-      availableMethods: manifest.learning.availableMethods || []
-    }
+    scriptverseConfig: { position: { x, y }, availableMethods: manifest.learning.availableMethods || [] }
   }
 }
 
@@ -105,11 +98,25 @@ function buildGoalMarker (manifest) {
     id,
     thangType: ENGINE.thangTypes.goalTrigger,
     scriptverseRole: 'goal-trigger',
+    components: [component(ENGINE.components.exists), physicalAt(x, y, 1)],
+    scriptverseConfig: { position: { x, y } }
+  }
+}
+
+function buildDevelopmentBackground () {
+  return {
+    id: 'ScriptVerse World Background',
+    thangType: ENGINE.thangTypes.developmentBackground,
+    scriptverseRole: 'world-background',
     components: [
       component(ENGINE.components.exists),
-      physicalAt(x, y, 1)
+      physicalAt(20.5, 18.5, 1, { rotation: 0, width: 42, height: 36, depth: 2 }),
+      component(ENGINE.commonComponents.scales, { scaleFactor: 0.29, scaleFactorX: 0 })
     ],
-    scriptverseConfig: { position: { x, y } }
+    scriptverseConfig: {
+      temporary: true,
+      purpose: 'Validate ScriptVerse map rendering before original Promised Land artwork is introduced.'
+    }
   }
 }
 
@@ -133,7 +140,7 @@ function adaptLevelManifest (input) {
       engineProfile: profile.id
     },
     goals: manifest.mission.goals,
-    thangs: [buildHeroPlaceholder(manifest), buildGoalMarker(manifest)],
+    thangs: [buildDevelopmentBackground(), buildHeroPlaceholder(manifest), buildGoalMarker(manifest)],
     systems: profile.systems.map(({ original, majorVersion }) => ({ original, majorVersion })),
     scripts: [],
     documentation: { specificArticles: [] },
