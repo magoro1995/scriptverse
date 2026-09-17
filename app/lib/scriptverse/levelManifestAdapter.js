@@ -83,10 +83,10 @@ function buildHeroPlaceholder (manifest) {
       physicalAt(x, y),
       programmableFor(manifest),
       component(ENGINE.commonComponents.says),
-      // Existence expects an Ownable planning method during system startup.
-      // Plans supplies the normal hero planning lifecycle used by the verified
-      // movement reference level.
-      component(ENGINE.commonComponents.plans, { worldEndsAfter: 3 }),
+      // Plans supplies the hero planning lifecycle required by Existence.
+      // Do not set worldEndsAfter here: ScriptVerse levels should finish from
+      // their authored GoalManager conditions, not a borrowed reference timer.
+      component(ENGINE.commonComponents.plans),
       component(ENGINE.commonComponents.equips, {
         inventory: { feet: ENGINE.items.simpleBoots }
       })
