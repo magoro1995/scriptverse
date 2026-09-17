@@ -46,8 +46,24 @@ function physicalAt (x, y) {
   return component(ENGINE.components.physical, { pos: { x, y, z: 0 } })
 }
 
-function programmableFor (methods) {
-  return component(ENGINE.components.programmable, { programmableMethods: methods || [] })
+// Tome treats programmableMethods as spells. Hero levels expose one writable
+// spell named `plan`; APIs such as moveRight are properties used inside it.
+function programmableFor (manifest) {
+  const starterCode = manifest.mission.starterCode || ''
+  return component(ENGINE.components.programmable, {
+    programmableMethods: {
+      plan: {
+        name: 'plan',
+        source: '// Write your ScriptVerse solution here.\n',
+        languages: { python: starterCode },
+        parameters: [],
+        permissions: {
+          read: ['humans'],
+          readwrite: ['humans']
+        }
+      }
+    }
+  })
 }
 
 function buildHeroPlaceholder (manifest) {
@@ -60,7 +76,7 @@ function buildHeroPlaceholder (manifest) {
       component(ENGINE.components.exists),
       physicalAt(x, y),
       component(ENGINE.components.moves),
-      programmableFor(manifest.learning.availableMethods)
+      programmableFor(manifest)
     ],
     scriptverseConfig: {
       position: { x, y },
