@@ -4,10 +4,9 @@
  * Converts repository-owned ScriptVerse authoring manifests into the
  * ScriptVerse portion of the Level shape consumed by the inherited engine.
  *
- * This deliberately does not copy upstream CodeCombat level definitions.
- * During the engine-integration milestone we reuse a small number of generic
- * engine/common ThangTypes only as development stand-ins. ScriptVerse-owned
- * art can replace them without changing the manifest format.
+ * ScriptVerse levels own their terrain, geometry and authored content. Generic
+ * inherited engine primitives are used only where they provide runtime behavior
+ * such as the current hero, goal trigger and invisible collision obstacle.
  */
 
 const { BASE_COMPONENTS, HERO_MOVEMENT_PROFILE, assertProfileResolved } = require('./engineProfile')
@@ -24,16 +23,12 @@ const ENGINE = {
     // Generic invisible obstacle from the verified reference level. It supplies
     // the inherited static obstacle collision profile while ScriptVerse owns
     // each obstacle's geometry and semantic role.
-    obstacle: '52bcc10d1f766a891c000001',
-    // Temporary visual skin only. World geometry comes from the ScriptVerse
-    // manifest and must never be inferred from this inherited artwork.
-    developmentBackground: '563d3c02f5b71e8405fabff8'
+    obstacle: '52bcc10d1f766a891c000001'
   },
   commonComponents: {
     says: '524b7b9f7fc0f6d519000015',
     plans: '524b7b517fc0f6d51900000d',
-    equips: '53e217d253457600003e3ebb',
-    scales: '52a399b98537a70000000003'
+    equips: '53e217d253457600003e3ebb'
   },
   items: {
     simpleBoots: '53e237bf53457600003e3f05'
@@ -78,7 +73,7 @@ function programmableFor (manifest) {
     programmableMethods: {
       plan: {
         name: 'plan',
-        source: '// Guide Joshua through the camp.\nhero.moveRight();\n',
+        source: '// ScriptVerse hero plan.\nhero.moveRight();\n',
         languages: { python: starterCode },
         parameters: []
       }
@@ -123,31 +118,6 @@ function mapGeometryFor (manifest) {
     height: bounds.height,
     centerX: bounds.width / 2 - 0.5,
     centerY: bounds.height / 2 + 0.5
-  }
-}
-
-function buildDevelopmentBackground (manifest) {
-  const geometry = mapGeometryFor(manifest)
-  return {
-    id: 'ScriptVerse World Background',
-    thangType: ENGINE.thangTypes.developmentBackground,
-    scriptverseRole: 'temporary-visual-skin',
-    components: [
-      component(ENGINE.components.exists),
-      physicalAt(geometry.centerX, geometry.centerY, 1, {
-        rotation: 0,
-        width: geometry.width,
-        height: geometry.height,
-        depth: 2
-      }),
-      component(ENGINE.commonComponents.scales, { scaleFactor: 0.29, scaleFactorX: 0 })
-    ],
-    scriptverseConfig: {
-      temporary: true,
-      geometrySource: 'manifest.map.bounds',
-      theme: manifest.map.theme,
-      purpose: 'Temporary rendering skin. It does not define ScriptVerse gameplay coordinates or map layout.'
-    }
   }
 }
 
@@ -212,7 +182,6 @@ function adaptLevelManifest (input) {
     },
     goals: manifest.mission.goals,
     thangs: [
-      buildDevelopmentBackground(manifest),
       ...collisionObstacles,
       buildHeroPlaceholder(manifest),
       buildGoalMarker(manifest)
