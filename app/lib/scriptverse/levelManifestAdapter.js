@@ -52,6 +52,11 @@ function validateManifest (manifest) {
   if (manifest.map.bounds) {
     assert(manifest.map.bounds.width > 0 && manifest.map.bounds.height > 0, 'Map bounds must be positive.')
   }
+  for (const scenery of manifest.map.scenery || []) {
+    assert(scenery.id && scenery.kind, 'Every scenery entry requires id and kind.')
+    assert(Number.isFinite(scenery.x) && Number.isFinite(scenery.y), `Scenery ${scenery.id} requires numeric x/y.`)
+    assert(scenery.width > 0 && scenery.height > 0, `Scenery ${scenery.id} requires positive width/height.`)
+  }
   return manifest
 }
 
@@ -142,10 +147,49 @@ function buildDevelopmentBackground (manifest) {
   }
 }
 
+/**
+ * During the integration phase semantic scenery is represented by lightweight
+ * engine Thangs using the same generic visual skin. Their identity, geometry,
+ * collision intent and meaning remain ScriptVerse-owned. Dedicated Promised
+ * Land ThangTypes can replace this renderer later without touching manifests.
+ */
+function buildSceneryThang (scenery) {
+  return {
+    id: `ScriptVerse Scenery: ${scenery.id}`,
+    thangType: ENGINE.thangTypes.developmentBackground,
+    scriptverseRole: 'scenery',
+    components: [
+      component(ENGINE.components.exists),
+      physicalAt(scenery.x, scenery.y, 0.75, {
+        rotation: 0,
+        width: scenery.width,
+        height: scenery.height,
+        depth: scenery.kind === 'water' ? 0.25 : 1
+      }),
+      component(ENGINE.commonComponents.scales, {
+        scaleFactor: Math.max(0.05, Math.min(0.18, Math.max(scenery.width, scenery.height) / 100)),
+        scaleFactorX: 0
+      })
+    ],
+    scriptverseConfig: {
+      sceneryId: scenery.id,
+      kind: scenery.kind,
+      collision: Boolean(scenery.collision),
+      bounds: { x: scenery.x, y: scenery.y, width: scenery.width, height: scenery.height },
+      temporaryRenderer: true
+    }
+  }
+}
+
+function buildScenery (manifest) {
+  return (manifest.map.scenery || []).map(buildSceneryThang)
+}
+
 function adaptLevelManifest (input) {
   const manifest = validateManifest(input)
   const profile = assertProfileResolved(HERO_MOVEMENT_PROFILE)
   const mapGeometry = mapGeometryFor(manifest)
+  const scenery = buildScenery(manifest)
 
   return {
     name: manifest.name,
@@ -162,10 +206,11 @@ function adaptLevelManifest (input) {
       mapTheme: manifest.map.theme,
       mapGeometry,
       landmarks: manifest.map.landmarks || {},
+      scenery: (manifest.map.scenery || []).map(item => Object.assign({}, item)),
       engineProfile: profile.id
     },
     goals: manifest.mission.goals,
-    thangs: [buildDevelopmentBackground(manifest), buildHeroPlaceholder(manifest), buildGoalMarker(manifest)],
+    thangs: [buildDevelopmentBackground(manifest), ...scenery, buildHeroPlaceholder(manifest), buildGoalMarker(manifest)],
     systems: profile.systems.map(({ original, majorVersion }) => ({ original, majorVersion })),
     scripts: [],
     documentation: { specificArticles: [] },
