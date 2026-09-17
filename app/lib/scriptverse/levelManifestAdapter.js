@@ -20,9 +20,6 @@ const ENGINE = {
   thangTypes: {
     captainHero: '529ec584c423d4e83b000014',
     goalTrigger: '52bcbf0dce43b70000000006',
-    // Generic invisible obstacle from the verified reference level. It supplies
-    // the inherited static obstacle collision profile while ScriptVerse owns
-    // each obstacle's geometry and semantic role.
     obstacle: '52bcc10d1f766a891c000001'
   },
   commonComponents: {
@@ -48,6 +45,7 @@ function validateManifest (manifest) {
   assert(manifest.mission && Array.isArray(manifest.mission.goals) && manifest.mission.goals.length, 'Level manifest requires at least one goal.')
   assert(manifest.map && manifest.map.playerStart, 'Level manifest requires a player start position.')
   assert(manifest.map && manifest.map.goal && manifest.map.goal.id, 'Level manifest requires a goal marker.')
+  assert(manifest.engine && manifest.engine.hero && manifest.engine.hero.name, 'ScriptVerse level requires an engine.hero.name.')
   if (manifest.map.bounds) {
     assert(manifest.map.bounds.width > 0 && manifest.map.bounds.height > 0, 'Map bounds must be positive.')
   }
@@ -84,10 +82,13 @@ function programmableFor (manifest) {
 function buildHeroPlaceholder (manifest) {
   const { x, y } = manifest.map.playerStart
   const worldEndsAfter = manifest.engine.worldEndsAfter || DEFAULT_WORLD_TIME_LIMIT_SECONDS
+  const identity = manifest.engine.hero
   return {
     id: manifest.engine.heroId || 'Hero Placeholder',
     thangType: ENGINE.thangTypes.captainHero,
     scriptverseRole: 'hero',
+    scriptverseName: identity.name,
+    scriptverseCharacterRole: identity.role || '',
     components: [
       component(ENGINE.components.exists),
       physicalAt(x, y),
@@ -96,7 +97,12 @@ function buildHeroPlaceholder (manifest) {
       component(ENGINE.commonComponents.plans, { worldEndsAfter }),
       component(ENGINE.commonComponents.equips, { inventory: { feet: ENGINE.items.simpleBoots } })
     ],
-    scriptverseConfig: { position: { x, y }, availableMethods: manifest.learning.availableMethods || [] }
+    scriptverseConfig: {
+      name: identity.name,
+      role: identity.role || '',
+      position: { x, y },
+      availableMethods: manifest.learning.availableMethods || []
+    }
   }
 }
 
@@ -173,6 +179,7 @@ function adaptLevelManifest (input) {
       sequence: manifest.sequence,
       scripture: manifest.scripture,
       learning: manifest.learning,
+      hero: Object.assign({}, manifest.engine.hero),
       missionBriefing: manifest.mission.briefing,
       mapTheme: manifest.map.theme,
       mapGeometry,
