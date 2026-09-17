@@ -27,11 +27,13 @@ module.exports = class ScriptVerseMapOverlay extends CocoClass
     return unless geometry.width? and geometry.height?
     @drawTerrain geometry
 
-    # Paths first so camp objects sit naturally above them.
+    # Broad terrain features first; authored landmarks and camp objects sit above.
     for item in (@map.scenery or []) when item.kind is 'path'
       @drawPath item
     for item in (@map.scenery or []) when item.kind is 'water'
       @drawRiver item
+    for item in (@map.scenery or []) when item.kind is 'riverbed'
+      @drawRiverbed item
     for item in (@map.scenery or []) when item.kind is 'tent-cluster'
       @drawTentCluster item
     for item in (@map.scenery or []) when item.kind is 'officers-area'
@@ -106,6 +108,28 @@ module.exports = class ScriptVerseMapOverlay extends CocoClass
     g.endStroke()
     waves.alpha = 0.65
     @container.addChild waves
+
+  drawRiverbed: (item) ->
+    b = @surfaceBounds item
+    bed = new createjs.Shape()
+    bed.graphics.beginFill('#d8bd82').drawRect(b.x, b.y, b.width, b.height).endFill()
+    @container.addChild bed
+
+    stones = new createjs.Shape()
+    g = stones.graphics
+    for i in [0...16]
+      px = b.x + 8 + ((i * 37) % 83) / 83 * Math.max(1, b.width - 16)
+      py = b.y + 6 + ((i * 29) % 71) / 71 * Math.max(1, b.height - 12)
+      rx = 2 + (i % 3)
+      ry = 1.5 + (i % 2)
+      g.beginFill(if i % 2 then '#9b8058' else '#b49a6c').drawEllipse(px - rx, py - ry, rx * 2, ry * 2).endFill()
+    stones.alpha = 0.75
+    @container.addChild stones
+
+    edge = new createjs.Shape()
+    edge.graphics.setStrokeStyle(2).beginStroke('#aa8c5e').drawRect(b.x, b.y, b.width, b.height).endStroke()
+    edge.alpha = 0.7
+    @container.addChild edge
 
   drawTentCluster: (item) ->
     b = @surfaceBounds item
