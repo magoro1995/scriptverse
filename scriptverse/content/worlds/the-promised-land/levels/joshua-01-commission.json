@@ -63,6 +63,10 @@
     "status": "content-manifest",
     "levelType": "hero",
     "heroId": "Hero Placeholder",
+    "hero": {
+      "name": "Joshua",
+      "role": "Leader of Israel"
+    },
     "requiredCapabilities": ["programmable", "physical", "moves", "goal-touch"],
     "integrationNotes": "This file is original ScriptVerse content. Generic inherited engine primitives are adapted at runtime; narrative, mission, map intent, and curriculum remain ScriptVerse-owned."
   }
