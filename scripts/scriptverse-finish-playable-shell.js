@@ -19,7 +19,7 @@ const brokenEarly = [
   "        @loadingView?.onClickStartLevel()",
   ''
 ].join('\n')
-const fixedEarly = [
+const previousFixed = [
   "    if @level.get('scriptverse')",
   "      @initSurface() unless @surface",
   "      # Repository levels can become playable before the inherited loader",
@@ -31,8 +31,28 @@ const fixedEarly = [
   "        @loadingView.unveil true",
   ''
 ].join('\n')
+const fixedEarly = [
+  "    if @level.get('scriptverse')",
+  "      @initSurface() unless @surface",
+  "      # ScriptVerse repository levels initialize their playable Surface early.",
+  "      # Remove only the inherited loading overlay; do not invoke its normal",
+  "      # intro/start lifecycle because that path waits on unrelated resources.",
+  "      _.defer =>",
+  "        return if @destroyed or not @loadingView?",
+  "        @loadingView.$el.remove()",
+  "        @removeSubView @loadingView",
+  "        @loadingView = null",
+  "        @unveiling = false",
+  "        @unveiled = true",
+  "        @surface?.showLevel()",
+  "        Backbone.Mediator.publish 'level:set-time', time: 0",
+  "        $(window).trigger 'resize'",
+  ''
+].join('\n')
 
-if (source.includes(brokenEarly.trim())) {
+if (source.includes(previousFixed.trim())) {
+  source = source.replace(previousFixed, fixedEarly)
+} else if (source.includes(brokenEarly.trim())) {
   source = source.replace(brokenEarly, fixedEarly)
 } else if (source.includes(originalEarly)) {
   source = source.replace(originalEarly, fixedEarly)
@@ -41,13 +61,27 @@ if (source.includes(brokenEarly.trim())) {
 }
 
 const oldStarted = "  onLevelStarted: ->\n    return unless @surface? or @webSurface?\n    @loadingView.showReady()\n    @trackLevelLoadEnd()\n"
-const newStarted = "  onLevelStarted: ->\n    return unless @surface? or @webSurface?\n    @loadingView?.showReady()\n    @trackLevelLoadEnd() unless @loadEndTime?\n"
+const previousStarted = "  onLevelStarted: ->\n    return unless @surface? or @webSurface?\n    @loadingView?.showReady()\n    @trackLevelLoadEnd() unless @loadEndTime?\n"
+const newStarted = [
+  "  onLevelStarted: ->",
+  "    return unless @surface? or @webSurface?",
+  "    if @level.get('scriptverse') and not @loadingView?",
+  "      @trackLevelLoadEnd() unless @loadEndTime?",
+  "      @surface?.showLevel()",
+  "      Backbone.Mediator.publish 'level:set-time', time: 0",
+  "      return",
+  "    @loadingView?.showReady()",
+  "    @trackLevelLoadEnd() unless @loadEndTime?",
+  ''
+].join('\n')
 
-if (source.includes(oldStarted)) {
+if (source.includes(previousStarted)) {
+  source = source.replace(previousStarted, newStarted)
+} else if (source.includes(oldStarted)) {
   source = source.replace(oldStarted, newStarted)
-} else if (!source.includes(newStarted)) {
+} else if (!source.includes(newStarted.trim())) {
   throw new Error('onLevelStarted loading anchor not found in PlayLevelView.coffee')
 }
 
 fs.writeFileSync(target, source)
-console.log('[ScriptVerse] Loading shell lifecycle fixed: no duplicate start call and late level-start is null-safe')
+console.log('[ScriptVerse] Inherited loading overlay is removed directly after early Surface initialization')
