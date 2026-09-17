@@ -6,32 +6,11 @@ const path = require('path')
 const target = path.join(__dirname, '..', 'app', 'views', 'play', 'level', 'PlayLevelView.coffee')
 let source = fs.readFileSync(target, 'utf8')
 
-const originalEarly = "    @initSurface() if @level.get('scriptverse') and not @surface\n"
-const brokenEarly = [
-  "    if @level.get('scriptverse')",
-  "      @initSurface() unless @surface",
-  "      # Repository levels do not wait for late proxy-only SuperModel resources.",
-  "      # Once the playable Surface exists, dismiss the inherited loading shell.",
-  "      _.defer =>",
-  "        return if @destroyed",
-  "        @loadingView?.showReady()",
-  "        @loadingView?.startUnveiling()",
-  "        @loadingView?.onClickStartLevel()",
-  ''
-].join('\n')
-const previousFixed = [
-  "    if @level.get('scriptverse')",
-  "      @initSurface() unless @surface",
-  "      # Repository levels can become playable before the inherited loader",
-  "      # reaches 100%. Unveil once Surface exists, but let the normal",
-  "      # level-start lifecycle select the hero and initialize the camera.",
-  "      _.defer =>",
-  "        return if @destroyed or not @loadingView?",
-  "        @loadingView.showReady()",
-  "        @loadingView.unveil true",
-  ''
-].join('\n')
-const fixedEarly = [
+// This helper deliberately does NOT remove LevelLoadingView or force its start
+// lifecycle. Doing so tears down the Tome/control-bar initialization. For now
+// ScriptVerse keeps the inherited loading overlay while the rest of the playable
+// shell remains intact; loading presentation will be fixed separately.
+const directRemoval = [
   "    if @level.get('scriptverse')",
   "      @initSurface() unless @surface",
   "      # ScriptVerse repository levels initialize their playable Surface early.",
@@ -49,20 +28,15 @@ const fixedEarly = [
   "        $(window).trigger 'resize'",
   ''
 ].join('\n')
+const safeEarly = "    @initSurface() if @level.get('scriptverse') and not @surface\n"
 
-if (source.includes(previousFixed.trim())) {
-  source = source.replace(previousFixed, fixedEarly)
-} else if (source.includes(brokenEarly.trim())) {
-  source = source.replace(brokenEarly, fixedEarly)
-} else if (source.includes(originalEarly)) {
-  source = source.replace(originalEarly, fixedEarly)
-} else if (!source.includes(fixedEarly.trim())) {
-  throw new Error('ScriptVerse early Surface anchor not found in PlayLevelView.coffee')
+if (source.includes(directRemoval.trim())) {
+  source = source.replace(directRemoval, safeEarly)
+} else if (!source.includes(safeEarly.trim())) {
+  throw new Error('Expected ScriptVerse early Surface block not found; refusing to modify PlayLevelView.coffee')
 }
 
-const oldStarted = "  onLevelStarted: ->\n    return unless @surface? or @webSurface?\n    @loadingView.showReady()\n    @trackLevelLoadEnd()\n"
-const previousStarted = "  onLevelStarted: ->\n    return unless @surface? or @webSurface?\n    @loadingView?.showReady()\n    @trackLevelLoadEnd() unless @loadEndTime?\n"
-const newStarted = [
+const directStarted = [
   "  onLevelStarted: ->",
   "    return unless @surface? or @webSurface?",
   "    if @level.get('scriptverse') and not @loadingView?",
@@ -74,14 +48,13 @@ const newStarted = [
   "    @trackLevelLoadEnd() unless @loadEndTime?",
   ''
 ].join('\n')
+const safeStarted = "  onLevelStarted: ->\n    return unless @surface? or @webSurface?\n    @loadingView?.showReady()\n    @trackLevelLoadEnd() unless @loadEndTime?\n"
 
-if (source.includes(previousStarted)) {
-  source = source.replace(previousStarted, newStarted)
-} else if (source.includes(oldStarted)) {
-  source = source.replace(oldStarted, newStarted)
-} else if (!source.includes(newStarted.trim())) {
-  throw new Error('onLevelStarted loading anchor not found in PlayLevelView.coffee')
+if (source.includes(directStarted.trim())) {
+  source = source.replace(directStarted, safeStarted)
+} else if (!source.includes(safeStarted.trim())) {
+  throw new Error('Expected onLevelStarted block not found; refusing to modify PlayLevelView.coffee')
 }
 
 fs.writeFileSync(target, source)
-console.log('[ScriptVerse] Inherited loading overlay is removed directly after early Surface initialization')
+console.log('[ScriptVerse] Restored safe playable shell lifecycle; loading overlay left intact for separate UI work')
