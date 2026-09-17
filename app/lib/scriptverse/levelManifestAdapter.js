@@ -21,6 +21,10 @@ const ENGINE = {
   thangTypes: {
     captainHero: '529ec584c423d4e83b000014',
     goalTrigger: '52bcbf0dce43b70000000006',
+    // Generic invisible obstacle from the verified reference level. It supplies
+    // the inherited static obstacle collision profile while ScriptVerse owns
+    // each obstacle's geometry and semantic role.
+    obstacle: '52bcc10d1f766a891c000001',
     // Temporary visual skin only. World geometry comes from the ScriptVerse
     // manifest and must never be inferred from this inherited artwork.
     developmentBackground: '563d3c02f5b71e8405fabff8'
@@ -147,15 +151,38 @@ function buildDevelopmentBackground (manifest) {
   }
 }
 
-/**
- * Semantic scenery remains level data until each ScriptVerse scenery kind has a
- * compatible renderer. A full-map background ThangType cannot be safely reused
- * as a tent/path/water sprite: its own display geometry tiles the entire map.
- * Keeping scenery declarative here prevents inherited artwork from corrupting
- * the authored camp layout while preserving the data for the upcoming renderer.
- */
 function buildScenery (manifest) {
   return (manifest.map.scenery || []).map(item => Object.assign({}, item))
+}
+
+function buildCollisionObstacle (scenery) {
+  return {
+    id: `ScriptVerse Obstacle: ${scenery.id}`,
+    thangType: ENGINE.thangTypes.obstacle,
+    scriptverseRole: 'collision-obstacle',
+    components: [
+      component(ENGINE.components.exists),
+      physicalAt(scenery.x, scenery.y, 5, {
+        shape: 'box',
+        rotation: 0,
+        width: scenery.width,
+        height: scenery.height,
+        depth: 10
+      })
+    ],
+    scriptverseConfig: {
+      sceneryId: scenery.id,
+      kind: scenery.kind,
+      collision: true,
+      bounds: { x: scenery.x, y: scenery.y, width: scenery.width, height: scenery.height }
+    }
+  }
+}
+
+function buildCollisionObstacles (manifest) {
+  return (manifest.map.scenery || [])
+    .filter(scenery => scenery.collision === true)
+    .map(buildCollisionObstacle)
 }
 
 function adaptLevelManifest (input) {
@@ -163,6 +190,7 @@ function adaptLevelManifest (input) {
   const profile = assertProfileResolved(HERO_MOVEMENT_PROFILE)
   const mapGeometry = mapGeometryFor(manifest)
   const scenery = buildScenery(manifest)
+  const collisionObstacles = buildCollisionObstacles(manifest)
 
   return {
     name: manifest.name,
@@ -183,7 +211,12 @@ function adaptLevelManifest (input) {
       engineProfile: profile.id
     },
     goals: manifest.mission.goals,
-    thangs: [buildDevelopmentBackground(manifest), buildHeroPlaceholder(manifest), buildGoalMarker(manifest)],
+    thangs: [
+      buildDevelopmentBackground(manifest),
+      ...collisionObstacles,
+      buildHeroPlaceholder(manifest),
+      buildGoalMarker(manifest)
+    ],
     systems: profile.systems.map(({ original, majorVersion }) => ({ original, majorVersion })),
     scripts: [],
     documentation: { specificArticles: [] },
