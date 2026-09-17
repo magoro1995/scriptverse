@@ -13,6 +13,7 @@
 const { BASE_COMPONENTS, HERO_MOVEMENT_PROFILE, assertProfileResolved } = require('./engineProfile')
 
 const SUPPORTED_FORMAT = 'scriptverse-level-v1'
+const DEFAULT_WORLD_TIME_LIMIT_SECONDS = 12
 
 const ENGINE = {
   components: BASE_COMPONENTS,
@@ -74,6 +75,7 @@ function programmableFor (manifest) {
 
 function buildHeroPlaceholder (manifest) {
   const { x, y } = manifest.map.playerStart
+  const worldEndsAfter = manifest.engine.worldEndsAfter || DEFAULT_WORLD_TIME_LIMIT_SECONDS
   return {
     id: manifest.engine.heroId || 'Hero Placeholder',
     thangType: ENGINE.thangTypes.captainHero,
@@ -83,10 +85,11 @@ function buildHeroPlaceholder (manifest) {
       physicalAt(x, y),
       programmableFor(manifest),
       component(ENGINE.commonComponents.says),
-      // Plans supplies the hero planning lifecycle required by Existence.
-      // Do not set worldEndsAfter here: ScriptVerse levels should finish from
-      // their authored GoalManager conditions, not a borrowed reference timer.
-      component(ENGINE.commonComponents.plans),
+      // Plans supplies the hero planning lifecycle required by Existence. The
+      // engine also needs a finite simulation horizon so the preload world can
+      // become `ended`, allowing Surface.showLevel() to publish level:started.
+      // GoalManager still decides success; this is only the time budget.
+      component(ENGINE.commonComponents.plans, { worldEndsAfter }),
       component(ENGINE.commonComponents.equips, {
         inventory: { feet: ENGINE.items.simpleBoots }
       })
