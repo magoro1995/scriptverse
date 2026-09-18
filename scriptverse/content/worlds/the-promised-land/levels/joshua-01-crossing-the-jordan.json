@@ -12,9 +12,18 @@
   },
   "learning": {
     "language": "python",
-    "newConcepts": ["syntax", "sequences", "method-calls"],
+    "newConcepts": [
+      "syntax",
+      "sequences",
+      "method-calls"
+    ],
     "reinforces": [],
-    "availableMethods": ["moveRight", "moveLeft", "moveUp", "moveDown"]
+    "availableMethods": [
+      "moveRight",
+      "moveLeft",
+      "moveUp",
+      "moveDown"
+    ]
   },
   "mission": {
     "briefing": "The LORD has stopped the Jordan before Israel. Guide Joshua across the opened riverbed to the western bank. Commands run from top to bottom, so place the movement instructions in the correct sequence.",
@@ -24,30 +33,127 @@
         "id": "cross-jordan",
         "name": "Cross the Jordan",
         "getToLocations": {
-          "who": ["Hero Placeholder"],
-          "targets": ["Western Bank Goal"]
+          "who": [
+            "Hero Placeholder"
+          ],
+          "targets": [
+            "Western Bank Goal"
+          ]
         }
       }
     ]
   },
   "map": {
     "theme": "jordan-crossing",
-    "bounds": { "width": 42, "height": 36 },
-    "playerStart": { "x": 8, "y": 18 },
-    "goal": { "id": "Western Bank Goal", "x": 32, "y": 18 },
+    "bounds": {
+      "width": 42,
+      "height": 36
+    },
+    "playerStart": {
+      "x": 8,
+      "y": 18
+    },
+    "goal": {
+      "id": "Western Bank Goal",
+      "x": 32,
+      "y": 18
+    },
     "landmarks": {
-      "eastBank": { "x": 12, "y": 18 },
-      "riverbed": { "x": 21, "y": 18 },
-      "westBank": { "x": 30, "y": 18 }
+      "eastBank": {
+        "x": 12,
+        "y": 18
+      },
+      "riverbed": {
+        "x": 21,
+        "y": 18
+      },
+      "westBank": {
+        "x": 30,
+        "y": 18
+      }
     },
     "scenery": [
-      { "id": "east-bank-camp-north", "kind": "tent-cluster", "x": 5, "y": 29, "width": 7, "height": 4, "collision": false },
-      { "id": "east-bank-camp-south", "kind": "tent-cluster", "x": 5, "y": 7, "width": 7, "height": 4, "collision": false },
-      { "id": "jordan-north", "kind": "water", "x": 21, "y": 28, "width": 7, "height": 12, "collision": true },
-      { "id": "jordan-south", "kind": "water", "x": 21, "y": 8, "width": 7, "height": 12, "collision": true },
-      { "id": "opened-riverbed", "kind": "riverbed", "x": 21, "y": 18, "width": 7, "height": 8, "collision": false },
-      { "id": "east-approach", "kind": "path", "x": 12, "y": 18, "width": 10, "height": 5, "collision": false },
-      { "id": "west-approach", "kind": "path", "x": 30, "y": 18, "width": 10, "height": 5, "collision": false }
+      {
+        "id": "east-bank-camp-north",
+        "kind": "tent-cluster",
+        "x": 5,
+        "y": 29,
+        "width": 7,
+        "height": 4,
+        "collision": false
+      },
+      {
+        "id": "east-bank-camp-south",
+        "kind": "tent-cluster",
+        "x": 5,
+        "y": 7,
+        "width": 7,
+        "height": 4,
+        "collision": false
+      },
+      {
+        "id": "jordan-north",
+        "kind": "water",
+        "x": 21,
+        "y": 28,
+        "width": 7,
+        "height": 12,
+        "collision": true
+      },
+      {
+        "id": "jordan-south",
+        "kind": "water",
+        "x": 21,
+        "y": 8,
+        "width": 7,
+        "height": 12,
+        "collision": true
+      },
+      {
+        "id": "opened-riverbed",
+        "kind": "riverbed",
+        "x": 21,
+        "y": 18,
+        "width": 7,
+        "height": 8,
+        "collision": false
+      },
+      {
+        "id": "east-approach",
+        "kind": "path",
+        "x": 12,
+        "y": 18,
+        "width": 10,
+        "height": 5,
+        "collision": false
+      },
+      {
+        "id": "west-approach",
+        "kind": "path",
+        "x": 30,
+        "y": 18,
+        "width": 10,
+        "height": 5,
+        "collision": false
+      },
+      {
+        "id": "priests-in-riverbed",
+        "kind": "ark-priests",
+        "x": 21,
+        "y": 22,
+        "width": 5,
+        "height": 3,
+        "collision": false
+      },
+      {
+        "id": "west-bank-marker",
+        "kind": "stone-marker",
+        "x": 31,
+        "y": 22,
+        "width": 3,
+        "height": 3,
+        "collision": false
+      }
     ],
     "designNotes": [
       "This is the first real ScriptVerse level rather than the earlier engine-integration commission prototype.",
@@ -55,7 +161,7 @@
       "The Jordan runs north-south. The opened riverbed is a clearly visible horizontal crossing through the water at y=18.",
       "Water north and south of the opening remains collision geometry, while the dry crossing itself is passable.",
       "Joshua and the western-bank goal share the same y coordinate so the introductory solution can focus on ordered eastward movement rather than accidental pathfinding into water.",
-      "Later art can show the priests and ark standing in the riverbed without changing the programming objective or collision layout."
+      "Show priests carrying the ark standing in the opened riverbed to anchor the gameplay visually in Joshua 3 without making them a programming obstacle."
     ]
   },
   "engine": {
@@ -66,7 +172,12 @@
       "name": "Joshua",
       "role": "Leader of Israel"
     },
-    "requiredCapabilities": ["programmable", "physical", "moves", "goal-touch"],
+    "requiredCapabilities": [
+      "programmable",
+      "physical",
+      "moves",
+      "goal-touch"
+    ],
     "integrationNotes": "Uses the shared ScriptVerse manifest adapter, renderer, local session pipeline, collision geometry, goals, and manifest-driven hero identity."
   }
 }
