@@ -26,6 +26,7 @@ module.exports = class ScriptVerseMapOverlay extends CocoClass
     geometry = @map.geometry or {}
     return unless geometry.width? and geometry.height?
     @drawTerrain geometry
+    @drawTerrainEdges geometry
 
     # Broad terrain features first; authored landmarks and camp objects sit above.
     for item in (@map.scenery or []) when item.kind is 'path'
@@ -81,13 +82,28 @@ module.exports = class ScriptVerseMapOverlay extends CocoClass
 
     texture = new createjs.Shape()
     g = texture.graphics
-    for i in [0...80]
+    for i in [0...130]
       px = b.x + ((i * 73) % 97) / 97 * b.width
       py = b.y + ((i * 47) % 89) / 89 * b.height
       r = 1 + (i % 3)
       g.beginFill(if i % 2 then '#a98450' else '#c5a46d').drawCircle(px, py, r).endFill()
+      if i % 11 is 0
+        g.setStrokeStyle(1).beginStroke('#8f744b').mt(px - 4, py + 3).curveTo(px, py - 2, px + 5, py + 2).endStroke()
     texture.alpha = 0.38
     @container.addChild texture
+
+  drawTerrainEdges: (geometry) ->
+    b = @worldSurfaceBounds geometry
+    edge = new createjs.Shape()
+    g = edge.graphics
+    # Irregular border strokes break the flat rectangular prototype look while
+    # remaining deterministic and cheap to cache.
+    g.setStrokeStyle(3).beginStroke('#8f6f43')
+    g.mt(b.x, b.y + 3).lt(b.x + b.width, b.y + 3)
+    g.mt(b.x, b.y + b.height - 3).lt(b.x + b.width, b.y + b.height - 3)
+    g.endStroke()
+    edge.alpha = 0.45
+    @container.addChild edge
 
   drawPath: (item) ->
     b = @surfaceBounds item
@@ -101,6 +117,14 @@ module.exports = class ScriptVerseMapOverlay extends CocoClass
     river = new createjs.Shape()
     river.graphics.beginFill('#397d96').drawRect(b.x, b.y, b.width, b.height).endFill()
     @container.addChild river
+
+    banks = new createjs.Shape()
+    bg = banks.graphics.setStrokeStyle(4).beginStroke('#8f744b')
+    bg.mt(b.x + 1, b.y).lt(b.x + 1, b.y + b.height)
+    bg.mt(b.x + b.width - 1, b.y).lt(b.x + b.width - 1, b.y + b.height)
+    bg.endStroke()
+    banks.alpha = 0.65
+    @container.addChild banks
 
     waves = new createjs.Shape()
     g = waves.graphics.setStrokeStyle(2).beginStroke('#7fb8c7')
