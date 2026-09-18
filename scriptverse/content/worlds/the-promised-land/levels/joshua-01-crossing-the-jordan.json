@@ -1,0 +1,183 @@
+{
+  "format": "scriptverse-level-v1",
+  "slug": "joshua-01-crossing-the-jordan",
+  "name": "Crossing the Jordan",
+  "world": "the-promised-land",
+  "sequence": 1,
+  "scripture": {
+    "book": "Joshua",
+    "chapter": 3,
+    "verses": "7-17",
+    "summary": "Israel comes to the Jordan at flood stage. The priests carrying the ark step into the water, the river is cut off, and the people cross on dry ground while the priests stand firm in the Jordan."
+  },
+  "learning": {
+    "language": "python",
+    "newConcepts": [
+      "syntax",
+      "sequences",
+      "method-calls"
+    ],
+    "reinforces": [],
+    "availableMethods": [
+      "moveRight",
+      "moveLeft",
+      "moveUp",
+      "moveDown"
+    ]
+  },
+  "mission": {
+    "briefing": "The LORD has stopped the Jordan before Israel. Guide Joshua across the opened riverbed to the western bank. Commands run from top to bottom, so place the movement instructions in the correct sequence.",
+    "starterCode": "# Cross the Jordan on the opened riverbed.\nhero.moveRight()",
+    "goals": [
+      {
+        "id": "cross-jordan",
+        "name": "Cross the Jordan",
+        "getToLocations": {
+          "who": [
+            "Hero Placeholder"
+          ],
+          "targets": [
+            "Western Bank Goal"
+          ]
+        }
+      }
+    ]
+  },
+  "map": {
+    "theme": "jordan-crossing",
+    "bounds": {
+      "width": 42,
+      "height": 36
+    },
+    "playerStart": {
+      "x": 8,
+      "y": 18
+    },
+    "goal": {
+      "id": "Western Bank Goal",
+      "x": 32,
+      "y": 18
+    },
+    "landmarks": {
+      "eastBank": {
+        "x": 12,
+        "y": 18
+      },
+      "riverbed": {
+        "x": 21,
+        "y": 18
+      },
+      "westBank": {
+        "x": 30,
+        "y": 18
+      }
+    },
+    "scenery": [
+      {
+        "id": "east-bank-camp-north",
+        "kind": "tent-cluster",
+        "x": 5,
+        "y": 29,
+        "width": 7,
+        "height": 4,
+        "collision": false
+      },
+      {
+        "id": "east-bank-camp-south",
+        "kind": "tent-cluster",
+        "x": 5,
+        "y": 7,
+        "width": 7,
+        "height": 4,
+        "collision": false
+      },
+      {
+        "id": "jordan-north",
+        "kind": "water",
+        "x": 21,
+        "y": 28,
+        "width": 7,
+        "height": 12,
+        "collision": true
+      },
+      {
+        "id": "jordan-south",
+        "kind": "water",
+        "x": 21,
+        "y": 8,
+        "width": 7,
+        "height": 12,
+        "collision": true
+      },
+      {
+        "id": "opened-riverbed",
+        "kind": "riverbed",
+        "x": 21,
+        "y": 18,
+        "width": 7,
+        "height": 8,
+        "collision": false
+      },
+      {
+        "id": "east-approach",
+        "kind": "path",
+        "x": 12,
+        "y": 18,
+        "width": 10,
+        "height": 5,
+        "collision": false
+      },
+      {
+        "id": "west-approach",
+        "kind": "path",
+        "x": 30,
+        "y": 18,
+        "width": 10,
+        "height": 5,
+        "collision": false
+      },
+      {
+        "id": "priests-in-riverbed",
+        "kind": "ark-priests",
+        "x": 21,
+        "y": 22,
+        "width": 5,
+        "height": 3,
+        "collision": false
+      },
+      {
+        "id": "west-bank-marker",
+        "kind": "stone-marker",
+        "x": 31,
+        "y": 22,
+        "width": 3,
+        "height": 3,
+        "collision": false
+      }
+    ],
+    "designNotes": [
+      "This is the first real ScriptVerse level rather than the earlier engine-integration commission prototype.",
+      "Keep Joshua 3:7-17 as the narrative frame: the priests and ark precede the people, the waters are stopped, and Israel crosses on dry ground.",
+      "The Jordan runs north-south. The opened riverbed is a clearly visible horizontal crossing through the water at y=18.",
+      "Water north and south of the opening remains collision geometry, while the dry crossing itself is passable.",
+      "Joshua and the western-bank goal share the same y coordinate so the introductory solution can focus on ordered eastward movement rather than accidental pathfinding into water.",
+      "Show priests carrying the ark standing in the opened riverbed to anchor the gameplay visually in Joshua 3 without making them a programming obstacle."
+    ]
+  },
+  "engine": {
+    "status": "playable-foundation",
+    "levelType": "hero",
+    "heroId": "Hero Placeholder",
+    "hero": {
+      "name": "Joshua",
+      "role": "Leader of Israel"
+    },
+    "requiredCapabilities": [
+      "programmable",
+      "physical",
+      "moves",
+      "goal-touch"
+    ],
+    "integrationNotes": "Uses the shared ScriptVerse manifest adapter, renderer, local session pipeline, collision geometry, goals, and manifest-driven hero identity."
+  }
+}

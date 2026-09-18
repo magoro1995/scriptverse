@@ -10,6 +10,8 @@ ThangType = require 'models/ThangType'
 ThangTypeConstants = require 'lib/ThangTypeConstants'
 ThangNamesCollection = require 'collections/ThangNamesCollection'
 LZString = require 'lz-string'
+scriptverseLevelRegistry = require 'lib/scriptverse/levelRegistry'
+scriptverseSessionFactory = require 'lib/scriptverse/sessionFactory'
 
 CocoClass = require 'core/CocoClass'
 AudioPlayer = require 'lib/AudioPlayer'
@@ -81,6 +83,18 @@ module.exports = class LevelLoader extends CocoClass
     )
 
   loadLevel: ->
+    if scriptverseLevelRegistry.hasLevel @levelID
+      attributes = scriptverseLevelRegistry.getLevelAttributes @levelID
+      attributes._id = @levelID
+      attributes.original ?= @levelID
+      attributes.version ?= {major: 0, minor: 1}
+      @level = new Level attributes
+      @level.loaded = true
+      @supermodel.trackModel @level
+      console.debug 'LevelLoader: loaded ScriptVerse repository level:', @level if LOG
+      @onLevelLoaded()
+      return
+
     @level = @supermodel.getModel(Level, @levelID) or new Level _id: @levelID
     if @level.loaded
       console.debug 'LevelLoader: level already loaded:', @level if LOG
@@ -134,8 +148,8 @@ module.exports = class LevelLoader extends CocoClass
   reportLoadError: ->
     return if @destroyed
     window.tracker?.trackEvent 'LevelLoadError',
-      category: 'Error',
-      levelSlug: @work?.level?.slug,
+      category: 'Error'
+      levelSlug: @work?.level?.slug
       unloaded: JSON.stringify(@supermodel.report().map (m) -> _.result(m.model, 'url'))
   
   onLevelLoaded: ->
@@ -168,6 +182,8 @@ module.exports = class LevelLoader extends CocoClass
         originalGet.apply @, arguments
     if @sessionless
       null
+    else if scriptverseLevelRegistry.hasLevel @levelID
+      @loadScriptVerseSession()
     else if @fakeSessionConfig?
       @loadFakeSession()
     else
@@ -175,6 +191,11 @@ module.exports = class LevelLoader extends CocoClass
     @populateLevel()
 
   # Session Loading
+
+  loadScriptVerseSession: ->
+    @session = scriptverseSessionFactory.createLocalSession @level, me.id
+    @supermodel.trackModel @session
+    @loadDependenciesForSession @session
 
   loadFakeSession: ->
     initVals =
