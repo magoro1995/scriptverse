@@ -38,6 +38,10 @@ module.exports = class ScriptVerseMapOverlay extends CocoClass
       @drawTentCluster item
     for item in (@map.scenery or []) when item.kind is 'officers-area'
       @drawOfficersArea item
+    for item in (@map.scenery or []) when item.kind is 'ark-priests'
+      @drawArkPriests item
+    for item in (@map.scenery or []) when item.kind is 'stone-marker'
+      @drawStoneMarker item
 
     # StageGL cannot display ordinary uncached Shape vector graphics. Rasterize
     # this original ScriptVerse terrain once, then let the native Land layer
@@ -163,3 +167,46 @@ module.exports = class ScriptVerseMapOverlay extends CocoClass
     mat.alpha = 0.55
     @container.addChild mat
     @drawTent b.x + b.width / 2, b.y + b.height / 2, Math.min(72, b.width * 0.65), Math.min(48, b.height * 0.65)
+
+
+  drawArkPriests: (item) ->
+    b = @surfaceBounds item
+    cx = b.x + b.width / 2
+    cy = b.y + b.height / 2
+
+    # Four simple robed priest silhouettes surrounding the ark. These are
+    # ScriptVerse terrain landmarks, not programmable Thangs, so they do not
+    # affect pathfinding or collision.
+    figures = [
+      {x: cx - b.width * 0.34, y: cy - b.height * 0.12}
+      {x: cx + b.width * 0.34, y: cy - b.height * 0.12}
+      {x: cx - b.width * 0.34, y: cy + b.height * 0.28}
+      {x: cx + b.width * 0.34, y: cy + b.height * 0.28}
+    ]
+    for p in figures
+      priest = new createjs.Shape()
+      g = priest.graphics
+      g.beginFill('#6b4b2d').drawCircle(p.x, p.y - 7, 3).endFill()
+      g.beginFill('#e1d1aa').mt(p.x - 5, p.y + 8).lt(p.x, p.y - 4).lt(p.x + 5, p.y + 8).closePath().endFill()
+      @container.addChild priest
+
+    ark = new createjs.Shape()
+    g = ark.graphics
+    g.beginFill('#8a5b25').drawRoundRect(cx - 18, cy - 9, 36, 18, 3).endFill()
+    g.beginFill('#d6aa3c').drawRect(cx - 16, cy - 11, 32, 4).endFill()
+    g.setStrokeStyle(3).beginStroke('#b9872e').mt(cx - 30, cy + 2).lt(cx + 30, cy + 2).endStroke()
+    @container.addChild ark
+
+  drawStoneMarker: (item) ->
+    b = @surfaceBounds item
+    stones = new createjs.Shape()
+    g = stones.graphics
+    cx = b.x + b.width / 2
+    base = b.y + b.height * 0.72
+    for i in [0...5]
+      row = if i < 3 then 0 else 1
+      col = if row is 0 then i else i - 3
+      px = cx + (col - (if row is 0 then 1 else 0.5)) * 11
+      py = base - row * 8
+      g.beginFill(if i % 2 then '#8c7658' else '#a28a66').drawEllipse(px - 7, py - 4, 14, 8).endFill()
+    @container.addChild stones
