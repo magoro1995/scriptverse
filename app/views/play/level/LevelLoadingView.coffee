@@ -144,9 +144,13 @@ module.exports = class LevelLoadingView extends CocoView
     # Run/Submit and the HUD).
     scriptverseLevel = @level?.get('scriptverse') or @options.level?.get('scriptverse')
     if scriptverseLevel
+      # ScriptVerse has no separate intro/start gate. Use the same full-unveil
+      # path as CodeCombat, but do it in one step. Calling startUnveiling()
+      # first schedules onClickStartLevel one second later; that second call can
+      # race with PlayLevelView removing this view and leave the LOADING label
+      # stranded. unveil(true) already publishes the unveiling event itself.
       _.delay (=>
         return if @destroyed or @unveiled
-        @startUnveiling()
         @unveil true
       ), 100
       return
