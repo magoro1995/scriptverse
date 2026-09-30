@@ -13,6 +13,7 @@ PlaybackOverScreen = require './PlaybackOverScreen'
 DebugDisplay = require './DebugDisplay'
 CoordinateDisplay = require './CoordinateDisplay'
 CoordinateGrid = require './CoordinateGrid'
+ScriptVerseMapOverlay = require './ScriptVerseMapOverlay'
 LankBoss = require './LankBoss'
 PointChooser = require './PointChooser'
 RegionChooser = require './RegionChooser'
@@ -170,6 +171,9 @@ module.exports = Surface = class Surface extends CocoClass
       gridOptions.hideAxisLabels = true
       gridOptions.alpha = 0.5
     @coordinateGrid ?= new CoordinateGrid gridOptions, @world.size()
+    if @options.level?.get('scriptverse')? and not @scriptverseMapOverlay?
+      sv = @options.level.get 'scriptverse'
+      @scriptverseMapOverlay = new ScriptVerseMapOverlay camera: @camera, layer: @lankBoss.layerAdapters['Land'], map: {geometry: sv.mapGeometry, scenery: sv.scenery}
     @coordinateGrid.showGrid() if @world.showGrid or @options.grid
     @showCoordinates = if @options.coords? then @options.coords else @world.showCoordinates
     if @showCoordinates

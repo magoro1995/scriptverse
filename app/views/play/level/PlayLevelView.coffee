@@ -567,8 +567,8 @@ module.exports = class PlayLevelView extends RootView
 
   onLevelStarted: ->
     return unless @surface? or @webSurface?
-    @loadingView.showReady()
-    @trackLevelLoadEnd()
+    @loadingView?.showReady()
+    @trackLevelLoadEnd() unless @loadEndTime?
     if window.currentModal and not window.currentModal.destroyed and [VictoryModal, CourseVictoryModal, HeroVictoryModal].indexOf(window.currentModal.constructor) is -1
       return Backbone.Mediator.subscribeOnce 'modal:closed', @onLevelStarted, @
     @surface?.showLevel()
