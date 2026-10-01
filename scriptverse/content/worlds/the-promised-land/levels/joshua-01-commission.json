@@ -1,0 +1,73 @@
+{
+  "format": "scriptverse-level-v1",
+  "slug": "joshua-01-commission",
+  "name": "Joshua's Commission",
+  "world": "the-promised-land",
+  "sequence": 1,
+  "scripture": {
+    "book": "Joshua",
+    "chapter": 1,
+    "verses": "1-11",
+    "summary": "After the death of Moses, the LORD commissions Joshua to lead Israel across the Jordan. Joshua commands the officers to prepare the people for the crossing."
+  },
+  "learning": {
+    "language": "python",
+    "newConcepts": ["syntax", "sequences", "method-calls"],
+    "reinforces": [],
+    "availableMethods": ["moveRight", "moveLeft", "moveUp", "moveDown"]
+  },
+  "mission": {
+    "briefing": "Guide Joshua through the camp and report to the officers of Israel as preparations begin to cross the Jordan.",
+    "starterCode": "# Guide Joshua through the camp.\nhero.moveRight()",
+    "goals": [
+      {
+        "id": "reach-officers",
+        "name": "Reach the officers of Israel",
+        "getToLocations": {
+          "who": ["Hero Placeholder"],
+          "targets": ["Israelite Officers Goal"]
+        }
+      }
+    ]
+  },
+  "map": {
+    "theme": "israelite-camp-east-of-jordan",
+    "bounds": { "width": 42, "height": 36 },
+    "playerStart": { "x": 12, "y": 24 },
+    "goal": { "id": "Israelite Officers Goal", "x": 24, "y": 12 },
+    "landmarks": {
+      "jordan": { "edge": "east" },
+      "officersArea": { "x": 24, "y": 12 },
+      "campCenter": { "x": 18, "y": 18 }
+    },
+    "scenery": [
+      { "id": "northwest-tents", "kind": "tent-cluster", "x": 6, "y": 30, "width": 8, "height": 5, "collision": false },
+      { "id": "north-tents", "kind": "tent-cluster", "x": 20, "y": 31, "width": 9, "height": 4, "collision": false },
+      { "id": "southwest-tents", "kind": "tent-cluster", "x": 6, "y": 7, "width": 8, "height": 5, "collision": false },
+      { "id": "south-tents", "kind": "tent-cluster", "x": 18, "y": 5, "width": 8, "height": 4, "collision": false },
+      { "id": "officers-camp", "kind": "officers-area", "x": 24, "y": 12, "width": 7, "height": 5, "collision": false },
+      { "id": "camp-path-east", "kind": "path", "x": 18, "y": 24, "width": 12, "height": 4, "collision": false },
+      { "id": "camp-path-south", "kind": "path", "x": 24, "y": 18, "width": 4, "height": 12, "collision": false },
+      { "id": "jordan-river", "kind": "water", "x": 39, "y": 18, "width": 6, "height": 36, "collision": true }
+    ],
+    "designNotes": [
+      "Keep the camp open and readable rather than corridor-like.",
+      "Place tents mainly around the edges and use only a few natural obstacles.",
+      "Preserve visual continuity toward the Jordan on the east edge for later levels.",
+      "Joshua begins in the northwest portion of the playable camp and reaches the officers by moving east and then south.",
+      "Level 1 uses one eastward move followed by one southward move so the first victory demonstrates execution order and a two-command sequence.",
+      "Scenery is authored as semantic ScriptVerse data. Engine-specific temporary art must be selected by the adapter, not embedded in this manifest."
+    ]
+  },
+  "engine": {
+    "status": "content-manifest",
+    "levelType": "hero",
+    "heroId": "Hero Placeholder",
+    "hero": {
+      "name": "Joshua",
+      "role": "Leader of Israel"
+    },
+    "requiredCapabilities": ["programmable", "physical", "moves", "goal-touch"],
+    "integrationNotes": "This file is original ScriptVerse content. Generic inherited engine primitives are adapted at runtime; narrative, mission, map intent, and curriculum remain ScriptVerse-owned."
+  }
+}

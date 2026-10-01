@@ -351,6 +351,11 @@ module.exports = class PlayLevelView extends RootView
     @controlBar.setBus(@bus)
     @initScriptManager()
 
+    # Repository-owned ScriptVerse levels already have everything needed to
+    # render at world-necessities-loaded. Do not keep their playable Surface
+    # hidden behind late proxy/nonessential SuperModel resources.
+    @initSurface() if @level.get('scriptverse') and not @surface
+
   onWorldNecessityLoadFailed: (resource) ->
     @loadingView.onLoadError(resource)
 
@@ -521,7 +526,7 @@ module.exports = class PlayLevelView extends RootView
     if @level.isType('web-dev')
       Backbone.Mediator.publish 'level:started', {}
     else
-      @initSurface()
+      @initSurface() unless @surface
 
   saveRecentMatch: ->
     allRecentlyPlayedMatches = storage.load('recently-played-matches') ? {}

@@ -259,7 +259,7 @@ module.exports = class World
       try
         system.start @thangs
       catch err
-        console.error "Error starting system!", system, err
+        console.error "Error starting system #{system.className ? system.constructor?.className ? 'unknown'}: #{err?.message ? err}", err?.stack ? ''
     @constrainHeroHealth(level)
 
   loadSystemsFromLevel: (level) ->

@@ -102,10 +102,14 @@ module.exports = class LevelHUDView extends CocoView
     @stage?.stopTalking()
 
   createProperties: ->
+    scriptverseHero = @options.level.get('scriptverse')?.hero
     if @options.level.isType('game-dev')
       name = 'Game'  # TODO: we don't need the HUD at all
     else if @thang.id in ['Hero Placeholder', 'Hero Placeholder 1']
-      name = @thangType?.getHeroShortName() or 'Hero'
+      # ScriptVerse owns the narrative identity. The inherited ThangType is only
+      # the temporary runtime/avatar implementation and must not rename Joshua
+      # back to the engine hero (for example, Tharin).
+      name = scriptverseHero?.name or @thang.scriptverseName or @thangType?.getHeroShortName() or 'Hero'
     else
       name = @thang.hudName or (if @thang.type then "#{@thang.id} - #{@thang.type}" else @thang.id)
     utils.replaceText @$el.find('.thang-name'), name
